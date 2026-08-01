@@ -10,7 +10,8 @@ const CHIPS = [
 export function Creatives() {
   return (
     <section className="relative w-full overflow-hidden py-24">
-      <div className="relative mx-auto w-full max-w-[1440px] px-6">
+      <div className="relative mx-auto w-full max-w-[1440px] px-6 lg:min-h-[880px]">
+
         {/* blobs */}
         <div
           className="pointer-events-none absolute left-[70px] top-0 hidden h-[833px] w-[523px] lg:block"
@@ -21,7 +22,7 @@ export function Creatives() {
           style={{ backgroundColor: "#7C37FA", borderRadius: "100px 100px 0 0" }}
         />
 
-        <div className="relative z-10 mx-auto max-w-[760px] lg:ml-[640px] lg:mr-0">
+        <div className="relative z-10 mx-auto max-w-[760px] pt-6 lg:ml-[640px] lg:mr-0 lg:pt-[80px]">
           <p className="font-display text-[18px] leading-relaxed md:text-[22px]" style={{ color: "#1E997D" }}>
             is a color playground for creatives. Pick any shade you love, tell us your field,
             and our AI builds palettes that actually make sense, no more guessing, no more

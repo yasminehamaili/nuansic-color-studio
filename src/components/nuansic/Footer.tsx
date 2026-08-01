@@ -86,7 +86,7 @@ export function Footer() {
                     <li key={l.label} style={{ lineHeight: "40px" }}>
                       <a
                         href="#top"
-                        className="font-display text-[23px] transition-opacity duration-200 hover:opacity-70"
+                        className="whitespace-nowrap font-display text-[20px] transition-opacity duration-200 hover:opacity-70"
                         style={{ color: l.color }}
                       >
                         {l.label}

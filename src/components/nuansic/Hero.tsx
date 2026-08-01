@@ -88,7 +88,7 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
             </div>
             <div
               className="absolute rounded-full px-6 py-2 font-display text-[20px] font-semibold"
-              style={{ left: 240, top: -60, backgroundColor: "#E87323", color: "#F5F5F5" }}
+              style={{ left: 180, top: -30, backgroundColor: "#E87323", color: "#F5F5F5" }}
             >
               #F4D88E
             </div>
