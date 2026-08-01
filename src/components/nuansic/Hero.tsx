@@ -65,7 +65,9 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
                 type="button"
                 aria-label={`color block ${i + 1}`}
                 onMouseEnter={() => reroll(i)}
+                onMouseLeave={() => reset(i)}
                 onFocus={() => reroll(i)}
+                onBlur={() => reset(i)}
                 className="absolute h-[236px] w-[236px] rounded-[20px] outline-none"
                 style={{
                   left: b.left,
@@ -80,18 +82,20 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
             <ArrowDoodle className="absolute left-[110px] top-[10px] h-[60px] w-[90px]" rotate={-126} />
             <ArrowDoodle className="absolute left-[1245px] top-[30px] h-[60px] w-[90px]" rotate={58.65} />
 
+            {/* tag pills stuck to their matching blocks */}
             <div
-              className="absolute rounded-full px-6 py-2 font-display text-[20px] font-semibold"
-              style={{ left: 1180, top: 320, backgroundColor: "#5162AA", color: "#F5F5F5" }}
+              className="pointer-events-none absolute rounded-full px-6 py-2 font-display text-[20px] font-semibold"
+              style={{ left: 1140, top: 240, backgroundColor: "#5162AA", color: "#F5F5F5" }}
             >
               #B8D8EA
             </div>
             <div
-              className="absolute rounded-full px-6 py-2 font-display text-[20px] font-semibold"
-              style={{ left: 180, top: -30, backgroundColor: "#E87323", color: "#F5F5F5" }}
+              className="pointer-events-none absolute rounded-full px-6 py-2 font-display text-[20px] font-semibold"
+              style={{ left: 352, top: 8, backgroundColor: "#E87323", color: "#F5F5F5" }}
             >
               #F4D88E
             </div>
+
           </div>
         </div>
 
