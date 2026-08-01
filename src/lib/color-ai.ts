@@ -131,11 +131,11 @@ export async function extractDominantColors(
     // Bucket colors in a coarse 3D grid, then rank by frequency.
     const buckets = new Map<string, { n: number; r: number; g: number; b: number }>();
     for (let i = 0; i < data.length; i += 4) {
-      const a = data[i + 3];
+      const a = data[i + 3]!;
       if (a < 125) continue;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+      const r = data[i]!;
+      const g = data[i + 1]!;
+      const b = data[i + 2]!;
       const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
       const cur = buckets.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
       cur.n++;
@@ -163,7 +163,7 @@ export async function extractDominantColors(
       if (out.length === count) break;
     }
     while (out.length < count && ranked.length)
-      out.push(ranked[out.length % ranked.length]);
+      out.push(ranked[out.length % ranked.length]!);
     return out;
   } finally {
     URL.revokeObjectURL(url);
@@ -224,13 +224,13 @@ export function generateFieldPalette(
 
   const n = Math.max(3, Math.min(count, ROLES.length));
   return Array.from({ length: n }, (_, i) => {
-    const r = recipe[i % recipe.length];
+    const r = recipe[i % recipe.length]!;
     const hex = hslToHex(
       h + r.dh + warmShift,
       s * f.s * r.ds,
       Math.max(10, Math.min(94, l * f.l + r.dl)),
     );
-    return { role: ROLES[i], hex };
+    return { role: ROLES[i]!, hex };
   });
 }
 
@@ -239,5 +239,5 @@ export function nextHoverColor(current: string): string {
   const pool = BRAND_PALETTE.filter(
     (c) => c.toLowerCase() !== current.toLowerCase(),
   );
-  return pool[Math.floor(Math.random() * pool.length)];
+  return pool[Math.floor(Math.random() * pool.length)]!;
 }
