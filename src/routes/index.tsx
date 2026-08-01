@@ -1,24 +1,52 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useRef } from "react";
+import { Header } from "@/components/nuansic/Header";
+import { Hero } from "@/components/nuansic/Hero";
+import { Workspace } from "@/components/nuansic/Workspace";
+import { Creatives } from "@/components/nuansic/Creatives";
+import { Footer } from "@/components/nuansic/Footer";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "nuansic — AI color palette generator for creatives" },
+      {
+        name: "description",
+        content:
+          "Pick a color, upload an image, choose your field — nuansic builds palettes that actually make sense for designers, fashion, UI/UX and interiors.",
+      },
+      { property: "og:title", content: "nuansic — AI color palette generator" },
+      {
+        property: "og:description",
+        content:
+          "Extract colors from any image and generate field-tuned palettes for design, fashion, UI/UX and interiors.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const openPickerRef = useRef<(() => void) | null>(null);
+
+  const register = useCallback((fn: () => void) => {
+    openPickerRef.current = fn;
+  }, []);
+
+  const scrollAndOpen = () => {
+    document.getElementById("workspace")?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => openPickerRef.current?.(), 600);
+  };
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="min-h-screen bg-background">
+      <Header />
+      <Hero onUploadClick={scrollAndOpen} />
+      <Workspace registerOpenPicker={register} />
+      <Creatives />
+      <Footer />
+    </main>
   );
 }
