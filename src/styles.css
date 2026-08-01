@@ -18,7 +18,20 @@
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
+/*
+ * FONT SWAP POINT — drop real font files in and change these two lines only.
+ * --font-brand  = "Sinteca" substitute (Sora)
+ * --font-script = "Miracle History" substitute (Caveat), used for "world"
+ */
+:root {
+  --font-brand: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Caveat", ui-serif, cursive;
+}
+
 @theme inline {
+  --font-display: var(--font-brand);
+  --font-sans: var(--font-brand);
+  --font-script: var(--font-script);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,8 +76,8 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --background: oklch(0.9612 0 0); /* #F5F5F5 */
+  --foreground: oklch(0.1448 0 0); /* #0B0B0B */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
