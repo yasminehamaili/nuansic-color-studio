@@ -35,6 +35,10 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
       prev.map((c, idx) => (idx === i ? nextHoverColor(c) : c)),
     );
 
+  const reset = (i: number) =>
+    setColors((prev) => prev.map((c, idx) => (idx === i ? BLOCKS[i]!.color : c)));
+
+
   return (
     <section id="top" className="relative w-full overflow-hidden pb-20">
       <div className="relative mx-auto w-full max-w-[1440px] px-6">
