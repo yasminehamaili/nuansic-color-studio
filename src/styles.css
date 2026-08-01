@@ -18,7 +18,20 @@
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
+/*
+ * FONT SWAP POINT — drop real font files in and change these two lines only.
+ * --font-brand  = "Sinteca" substitute (Sora)
+ * --font-script = "Miracle History" substitute (Caveat), used for "world"
+ */
+:root {
+  --font-brand: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Caveat", ui-serif, cursive;
+}
+
 @theme inline {
+  --font-display: var(--font-brand);
+  --font-sans: var(--font-brand);
+  --font-script: var(--font-script);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,20 +76,20 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --background: oklch(0.9612 0 0); /* #F5F5F5 */
+  --foreground: oklch(0.1448 0 0); /* #0B0B0B */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.1448 0 0);
+  --primary-foreground: oklch(0.9612 0 0);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.7728 0.0075 67.79); /* #BDBAB5 */
+  --muted-foreground: oklch(0.5307 0.0057 67.79); /* #6B6863 */
+  --accent: oklch(0.6788 0.1683 46.42); /* #E87323 */
+  --accent-foreground: oklch(0.9612 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
