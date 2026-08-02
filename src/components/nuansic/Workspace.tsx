@@ -9,11 +9,12 @@ import {
 } from "@/lib/color-ai";
 
 const CATEGORIES: { label: Category; w: string }[] = [
-  { label: "Graphic Design", w: "303px" },
-  { label: "UI/UX", w: "118px" },
-  { label: "fashion", w: "144px" },
-  { label: "Interior home design", w: "335px" },
+  { label: "Graphic Design", w: "182px" },
+  { label: "UI/UX", w: "76px" },
+  { label: "fashion", w: "92px" },
+  { label: "Interior home design", w: "201px" },
 ];
+
 
 export type WorkspaceHandle = { openPicker: () => void };
 
@@ -54,8 +55,9 @@ export function Workspace({
   };
 
   return (
-    <section id="workspace" className="w-full py-16">
-      <div className="mx-auto grid w-full max-w-[1440px] gap-10 px-6 lg:grid-cols-[741px_1fr] lg:px-[91px]">
+    <section id="workspace" className="w-full py-12">
+      <div className="mx-auto grid w-full max-w-[1100px] gap-8 px-6 lg:grid-cols-[445px_1fr]">
+
         {/* LEFT */}
         <div>
           <input
