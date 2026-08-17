@@ -9,12 +9,11 @@ import {
 } from "@/lib/color-ai";
 
 const CATEGORIES: { label: Category; w: string }[] = [
-  { label: "Graphic Design", w: "182px" },
-  { label: "UI/UX", w: "76px" },
-  { label: "fashion", w: "92px" },
-  { label: "Interior home design", w: "201px" },
+  { label: "Graphic Design", w: "220px" },
+  { label: "UI/UX", w: "92px" },
+  { label: "fashion", w: "112px" },
+  { label: "Interior home design", w: "244px" },
 ];
-
 
 export type WorkspaceHandle = { openPicker: () => void };
 
@@ -55,11 +54,14 @@ export function Workspace({
   };
 
   return (
-    <section id="workspace" className="w-full py-12">
-      <div className="mx-auto grid w-full max-w-[1100px] gap-8 px-6 lg:grid-cols-[445px_1fr]">
+    <section
+      id="workspace"
+      className="flex w-full min-h-screen items-center justify-center py-12"
+    >
+      <div className="mx-auto grid w-full max-w-[1250px] items-center gap-16 px-6 lg:grid-cols-[minmax(0,600px)_minmax(0,460px)]">
 
         {/* LEFT */}
-        <div>
+        <div className="mx-auto w-full max-w-[600px]">
           <input
             ref={inputRef}
             type="file"
@@ -80,7 +82,7 @@ export function Workspace({
               setDragging(false);
               handleFile(e.dataTransfer.files?.[0]);
             }}
-            className="flex h-[240px] w-full items-center justify-center overflow-hidden rounded-[12px] border-2 border-dashed transition-colors duration-200 lg:h-[358px] lg:w-[445px]"
+            className="flex h-[320px] w-full items-center justify-center overflow-hidden rounded-[16px] border-2 border-dashed transition-colors duration-200 lg:h-[480px]"
             style={{
               borderColor: dragging ? "#E87323" : "#6B6863",
               backgroundColor: "#D9D9D9",
@@ -90,7 +92,7 @@ export function Workspace({
               <img src={preview} alt="uploaded preview" className="h-full w-full object-cover" />
             ) : (
               <span
-                className="font-display text-[14px] leading-relaxed md:text-[16px]"
+                className="font-display text-[18px] leading-relaxed md:text-[22px]"
                 style={{ color: "#6B6863" }}
               >
                 Upload an image
@@ -103,14 +105,14 @@ export function Workspace({
           </button>
 
           {extracted.length > 0 && (
-            <div className="mt-4 grid grid-cols-6 gap-[11px]">
+            <div className="mt-5 grid grid-cols-6 gap-[14px]">
               {extracted.map((hex, i) => (
                 <button
                   key={`${hex}-${i}`}
                   type="button"
                   onClick={() => setPicked(hex)}
                   aria-label={`pick ${hex}`}
-                  className="h-[42px] rounded-[8px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[63px]"
+                  className="h-[56px] rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px]"
                   style={{
                     backgroundColor: hex,
                     outline:
@@ -126,19 +128,19 @@ export function Workspace({
         </div>
 
         {/* RIGHT */}
-        <div className="max-w-[318px] lg:max-w-[340px]">
+        <div className="mx-auto w-full max-w-[460px]">
           <div
-            className="flex h-[42px] w-full items-center justify-center rounded-[12px] font-display text-[12px] font-bold transition-colors duration-300"
+            className="flex h-[56px] w-full items-center justify-center rounded-[14px] font-display text-[15px] font-bold transition-colors duration-300"
             style={{ backgroundColor: picked, color: readableTextOn(picked) }}
           >
             {picked.toUpperCase()}
           </div>
 
-          <p className="mt-5 font-display text-[16px] text-foreground">Palette:</p>
+          <p className="mt-6 font-display text-[20px] text-foreground">Palette:</p>
 
-          <div className="mt-3 flex items-start gap-4">
+          <div className="mt-4 flex items-start gap-5">
             <div
-              className="flex h-[42px] w-full max-w-[282px] overflow-hidden rounded-[12px]"
+              className="flex h-[56px] w-full max-w-[380px] overflow-hidden rounded-[14px]"
               style={{ backgroundColor: "#D9D9D9" }}
             >
               {ramp.map((hex) => (
@@ -152,11 +154,11 @@ export function Workspace({
                 />
               ))}
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <button
                 type="button"
                 onClick={() => setCount((c) => Math.min(10, c + 1))}
-                className="h-[20px] w-[22px] rounded-[6px] text-[13px] leading-none text-foreground transition-transform duration-150 hover:scale-110 active:scale-95"
+                className="h-[26px] w-[28px] rounded-[7px] text-[16px] leading-none text-foreground transition-transform duration-150 hover:scale-110 active:scale-95"
                 style={{ backgroundColor: "#D9D9D9" }}
               >
                 +
@@ -164,7 +166,7 @@ export function Workspace({
               <button
                 type="button"
                 onClick={() => setCount((c) => Math.max(3, c - 1))}
-                className="h-[20px] w-[22px] rounded-[6px] text-[13px] leading-none text-foreground transition-transform duration-150 hover:scale-110 active:scale-95"
+                className="h-[26px] w-[28px] rounded-[7px] text-[16px] leading-none text-foreground transition-transform duration-150 hover:scale-110 active:scale-95"
                 style={{ backgroundColor: "#D9D9D9" }}
               >
                 −
@@ -172,7 +174,7 @@ export function Workspace({
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-7 flex flex-wrap gap-3">
             {CATEGORIES.map((c) => {
               const active = category === c.label;
               return (
@@ -180,7 +182,7 @@ export function Workspace({
                   key={c.label}
                   type="button"
                   onClick={() => setCategory(active ? null : c.label)}
-                  className="h-[34px] rounded-[8px] px-3 font-display text-[13px] transition-all duration-200 hover:scale-105 active:scale-95 md:text-[15px]"
+                  className="h-[44px] rounded-[10px] px-4 font-display text-[15px] transition-all duration-200 hover:scale-105 active:scale-95 md:text-[17px]"
                   style={{
                     width: c.w,
                     maxWidth: "100%",
@@ -195,7 +197,7 @@ export function Workspace({
           </div>
 
           <div
-            className="mt-6 flex h-[174px] w-full max-w-[340px] items-center justify-center gap-2 rounded-[8px] p-3"
+            className="mt-7 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-3 rounded-[10px] p-4"
             style={{ backgroundColor: "#D9D9D9" }}
           >
             {output ? (
@@ -205,12 +207,12 @@ export function Workspace({
                   type="button"
                   onClick={() => copy(s.hex)}
                   title={`${s.role} — click to copy`}
-                  className="flex h-full flex-1 flex-col items-center justify-between rounded-[10px] py-3 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+                  className="flex h-full flex-1 flex-col items-center justify-between rounded-[12px] py-4 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
                   style={{ backgroundColor: s.hex, color: readableTextOn(s.hex) }}
                 >
-                  <span className="font-display text-[10px] font-semibold">{s.role}</span>
+                  <span className="font-display text-[12px] font-semibold">{s.role}</span>
                   <span
-                    className="font-display text-[12px] font-bold"
+                    className="font-display text-[14px] font-bold"
                     style={{ writingMode: "vertical-rl" }}
                   >
                     {copied === s.hex ? "copied!" : s.hex.toUpperCase()}
@@ -218,7 +220,7 @@ export function Workspace({
                 </button>
               ))
             ) : (
-              <p className="px-4 text-center font-display text-[13px]" style={{ color: "#6B6863" }}>
+              <p className="px-6 text-center font-display text-[15px]" style={{ color: "#6B6863" }}>
                 pick a color and choose a field to generate your palette
               </p>
             )}

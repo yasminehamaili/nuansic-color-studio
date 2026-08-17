@@ -1,29 +1,29 @@
 const CHIPS = [
-  { label: "#Colors", bg: "#AADCE3", fg: "#1D5ED6", rotate: -15, left: 168, top: 0 },
-  { label: "#Design", bg: "#FCD402", fg: "#FC5649", rotate: 8, left: 316, top: 62 },
-  { label: "#Interior", bg: "#FC71CE", fg: "#FFFFFF", rotate: -10, left: 108, top: 118 },
-  { label: "#Fashion", bg: "#1D5EDE", fg: "#FCD401", rotate: 5, left: 268, top: 182 },
-  { label: "#Graphic", bg: "#FA9359", fg: "#1E997D", rotate: -8, left: 62, top: 244 },
-  { label: "#UIUX", bg: "#FE564B", fg: "#F3E7DB", rotate: 12, left: 232, top: 300 },
+  { label: "#Colors", bg: "#AADCE3", fg: "#1D5ED6", rotate: -15, left: 17, top: 0 },
+  { label: "#Design", bg: "#FCD402", fg: "#FC5649", rotate: 8, left: 220, top: 87 },
+  { label: "#Interior", bg: "#FC71CE", fg: "#FFFFFF", rotate: -10, left: 32, top: 165 },
+  { label: "#Fashion", bg: "#1D5EDE", fg: "#FCD401", rotate: 5, left: 177, top: 253 },
+  { label: "#Graphic", bg: "#FA9359", fg: "#1E997D", rotate: -8, left: 0, top: 342 },
+  { label: "#UIUX", bg: "#FE564B", fg: "#F3E7DB", rotate: 12, left: 177, top: 429 },
 ];
 
 export function Creatives() {
   return (
-    <section className="relative w-full overflow-hidden py-16">
-      <div className="relative mx-auto w-full max-w-[1100px] px-6 lg:h-[560px]">
+    <section className="relative w-full overflow-hidden py-10">
+      <div className="relative mx-auto w-full max-w-[1235px] px-8 lg:h-[874px]">
         {/* ---------- desktop composed canvas ---------- */}
-        <div className="relative mx-auto hidden h-[560px] w-[1000px] lg:block">
+        <div className="relative mx-auto hidden h-[817px] w-[1064px] lg:block">
           {/* green blob with logo + paragraph directly on it */}
           <div
-            className="absolute left-0 top-0 h-[500px] w-[314px]"
-            style={{ backgroundColor: "#A2E07D", borderRadius: "157px 157px 0 0" }}
+            className="absolute left-0 top-[32px] h-[728px] w-[452px]"
+            style={{ backgroundColor: "#A2E07D", borderRadius: "226px 226px 0 0" }}
           />
-          <div className="absolute left-0 top-[56px] w-[314px] px-5 text-center">
-            <span className="font-display text-[27px] font-extrabold tracking-tight text-foreground">
+          <div className="absolute left-0 top-[124px] w-[452px] px-7 text-center">
+            <span className="font-display text-[42px] font-extrabold tracking-tight text-foreground">
               nuansic
             </span>
             <p
-              className="mt-6 font-display text-[19px] leading-[1.35]"
+              className="mt-8 font-display text-[27px] leading-[1.3]"
               style={{ color: "#1E997D" }}
             >
               is a color playground for creatives. Pick any shade you love, tell us your field,
@@ -32,31 +32,31 @@ export function Creatives() {
             </p>
           </div>
 
-          {/* purple blob, behind the heading and grazing the last chip */}
+          {/* purple blob — bottom flush with the green blob's bottom (32 + 728 = 760) */}
           <div
-            className="absolute left-[430px] top-[380px] h-[180px] w-[440px]"
-            style={{ backgroundColor: "#7C37FA", borderRadius: "80px 80px 0 0" }}
+            className="absolute left-[583px] top-[584px] h-[175px] w-[475px]"
+            style={{ backgroundColor: "#7C37FA", borderRadius: "114px 114px 0 0" }}
           />
           <h2
-            className="absolute left-[470px] top-[410px] w-[400px] font-display text-[38px] font-bold leading-tight"
+            className="absolute left-[618px] top-[650px] w-[475px] font-display text-[40px] font-bold leading-tight"
             style={{ color: "#FAD1E1" }}
           >
             built for every creative
           </h2>
 
           {/* chip cluster */}
-          <div className="absolute left-[390px] top-[40px] h-[380px] w-[560px]">
+          <div className="absolute left-[650px] top-[122px] h-[507px] w-[418px]">
             {CHIPS.map((c) => (
               <span
                 key={c.label}
-                className="absolute rounded-[14px] px-4 py-1 font-display text-[24px] font-bold transition-transform duration-200 hover:scale-110"
+                className="absolute rounded-[19px] px-5 py-2 font-display text-[30px] font-bold transition-transform duration-200 hover:scale-110"
                 style={{
                   left: c.left,
                   top: c.top,
                   backgroundColor: c.bg,
                   color: c.fg,
                   transform: `rotate(${c.rotate}deg)`,
-                  filter: "drop-shadow(0px 4px 8px rgba(30,30,30,0.22))",
+                  filter: "drop-shadow(0px 5px 10px rgba(30,30,30,0.22))",
                 }}
               >
                 {c.label}
@@ -68,8 +68,8 @@ export function Creatives() {
         {/* ---------- mobile / tablet stack ---------- */}
         <div className="lg:hidden">
           <div
-            className="relative mx-auto w-full max-w-[420px] px-6 py-10 text-center"
-            style={{ backgroundColor: "#A2E07D", borderRadius: "180px 180px 0 0" }}
+            className="relative mx-auto w-full max-w-150 px-6 py-8 text-center"
+            style={{ backgroundColor: "#A2E07D", borderRadius: "170px 170px 0 0" }}
           >
             <span className="font-display text-[24px] font-extrabold text-foreground">nuansic</span>
             <p className="mt-4 font-display text-[16px] leading-snug" style={{ color: "#1E997D" }}>
@@ -83,7 +83,7 @@ export function Creatives() {
             {CHIPS.map((c) => (
               <span
                 key={c.label}
-                className="rounded-[14px] px-4 py-1 font-display text-[20px] font-bold"
+                className="rounded-[12px] px-4 py-1.5 font-display text-[18px] font-bold"
                 style={{
                   backgroundColor: c.bg,
                   color: c.fg,
@@ -98,11 +98,11 @@ export function Creatives() {
 
           <div className="relative mt-8">
             <div
-              className="absolute inset-x-0 top-0 mx-auto h-[130px] w-full max-w-[400px]"
-              style={{ backgroundColor: "#7C37FA", borderRadius: "70px 70px 0 0" }}
+              className="absolute inset-x-0 top-0 mx-auto h-[120px] w-full max-w-[380px]"
+              style={{ backgroundColor: "#7C37FA", borderRadius: "65px 65px 0 0" }}
             />
             <h2
-              className="relative px-8 pt-8 font-display text-[30px] font-bold leading-tight"
+              className="relative px-7 pt-7 font-display text-[26px] font-bold leading-tight"
               style={{ color: "#FAD1E1" }}
             >
               built for every creative

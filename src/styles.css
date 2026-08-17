@@ -24,9 +24,17 @@
  * --font-script = "Miracle History" substitute (Caveat), used for "world"
  */
 :root {
-  --font-brand: "Sora", ui-sans-serif, system-ui, sans-serif;
-  --font-script: "Caveat", ui-serif, cursive;
+  --font-brand: "Sinteca";
+  --font-script: "Miracle History";
 }
+@font-face {
+     font-family: 'Sinteca';
+     src: url('/fonts/Sinteca-Regular.otf') format('opentype');
+   }
+   @font-face {
+     font-family: 'Miracle History';
+     src: url('/fonts/Miracle History.ttf') format('opentype');
+   }
 
 @theme inline {
   --font-display: var(--font-brand);

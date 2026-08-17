@@ -9,13 +9,13 @@ import { Footer } from "@/components/nuansic/Footer";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "nuansic — AI color palette generator for creatives" },
+      { title: "nuansic" },
       {
         name: "description",
         content:
           "Pick a color, upload an image, choose your field — nuansic builds palettes that actually make sense for designers, fashion, UI/UX and interiors.",
       },
-      { property: "og:title", content: "nuansic — AI color palette generator" },
+      { property: "og:title", content: "nuansic" },
       {
         property: "og:description",
         content:

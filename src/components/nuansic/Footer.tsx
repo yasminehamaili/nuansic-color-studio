@@ -35,10 +35,10 @@ export function Footer() {
 
   return (
     <footer className="w-full border-t border-foreground/10 pb-8 pt-14">
-      <div className="mx-auto w-full max-w-[1100px] px-6">
+      <div className="mx-auto w-full max-w-[1500px] px-6">
         <div className="grid gap-10 lg:grid-cols-[300px_1fr_auto]">
           <div>
-            <h2 className="font-display text-[20px] font-semibold leading-tight text-foreground md:text-[26px]">
+            <h2 className="font-display text-[25px] font-semibold leading-tight text-foreground md:text-[26px]">
               pick a color. we&apos;ll build{" "}
               <span className="font-script text-[28px] font-bold text-accent md:text-[36px]">
                 your world
@@ -78,7 +78,7 @@ export function Footer() {
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
             {COLUMNS.map((col) => (
               <div key={col.title}>
-                <h3 className="font-display text-[16px] font-bold text-foreground">
+                <h3 className="font-display text-[20px] font-bold text-foreground">
                   {col.title}
                 </h3>
                 <ul className="mt-3 space-y-1">
@@ -86,7 +86,7 @@ export function Footer() {
                     <li key={l.label} style={{ lineHeight: "26px" }}>
                       <a
                         href="#top"
-                        className="whitespace-nowrap font-display text-[14px] transition-opacity duration-200 hover:opacity-70"
+                        className="whitespace-nowrap font-display text-[17px] transition-opacity duration-200 hover:opacity-70"
                         style={{ color: l.color }}
                       >
                         {l.label}
@@ -99,7 +99,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-display text-[16px] font-bold text-foreground">
+            <h3 className="font-display text-[20px] font-bold text-foreground">
               Follow the colors
             </h3>
             <div className="mt-4 flex gap-3">
@@ -118,7 +118,8 @@ export function Footer() {
         </div>
 
         <div className="mt-12 space-y-1 text-center text-[12px] text-foreground/50">
-          <p>© 2026 nuansic — made with love and lots of color.</p>
+          <p>© 2026 nuansic</p>
+          <p>made with love and lots of color.</p>
           <p>privacy / terms / cookies</p>
         </div>
       </div>

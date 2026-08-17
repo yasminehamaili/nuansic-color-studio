@@ -7,11 +7,11 @@
  */
 
 export const BRAND_PALETTE = [
-  "#B8D8EA",
-  "#E1165F",
+"#7783F1",
+"#F4D88E",
   "#D8B3DF",
-  "#F4D88E",
-  "#7783F1",
+  "#E1165F",
+  "#B8D8EA",
   "#A2E07D",
   "#7C37FA",
   "#1E997D",
@@ -20,6 +20,13 @@ export const BRAND_PALETTE = [
   "#1D5EDE",
   "#FCD402",
   "#FC71CE",
+  "#FF8FA3",
+  "#4ECDC4",
+  "#C77DFF",
+  "#FFB703",
+  "#06D6A0",
+  "#EF476F",
+  "#118AB2",
 ] as const;
 
 export type Category =

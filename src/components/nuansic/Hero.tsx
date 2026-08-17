@@ -3,11 +3,13 @@ import { nextHoverColor } from "@/lib/color-ai";
 
 /** Desktop canvas is the original 1440px design scaled to 60%. */
 const BLOCKS = [
-  { color: "#7783F1", left: 101, top: 27, rotate: -12.13 },
-  { color: "#F4D88E", left: 234, top: 17, rotate: -1.17 },
-  { color: "#D8B3DF", left: 356, top: 19, rotate: -6.36 },
-  { color: "#E1165F", left: 483, top: 28, rotate: 4.6 },
-  { color: "#B8D8EA", left: 597, top: 20, rotate: 10.64 },
+  { color: "#7783F1", left: 20,   top: 22, rotate: -12.13 },
+  { color: "#F4D88E", left: 180,  top: 30, rotate: -1.17 },
+  { color: "#D8B3DF", left: 340,  top: 15, rotate: -6.36 },
+  { color: "#E1165F", left: 500,  top: 26, rotate: 4.6 },
+  { color: "#B8D8EA", left: 660,  top: 18, rotate: 10.64 },
+  { color: "#FA9359", left: 820,  top: 24, rotate: -9 },
+  
 ];
 
 function ArrowDoodle({ className, rotate }: { className?: string; rotate: number }) {
@@ -58,14 +60,12 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
               world
             </span>
           </div>
-          <p className="mx-auto mt-4 max-w-[560px] font-display text-[14px] leading-snug text-foreground/80 md:text-[18px]">
-            AI-powered color palette for designers who knows what they want
-          </p>
+
         </div>
 
         {/* Color blocks: absolute canvas on desktop, wrapped flex on mobile */}
         <div className="relative mt-8 hidden h-[250px] lg:block">
-          <div className="absolute left-1/2 top-0 h-[250px] w-[864px] -translate-x-1/2">
+          <div className="absolute left-1/2 top-0 h-[250px] w-[1100px] -translate-x-1/2">
             {BLOCKS.map((b, i) => (
               <button
                 key={i}
@@ -75,7 +75,7 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
                 onMouseLeave={() => reset(i)}
                 onFocus={() => reroll(i)}
                 onBlur={() => reset(i)}
-                className="absolute h-[142px] w-[142px] rounded-[12px] outline-none"
+                className="absolute h-[210px] w-[210px] rounded-[20px] outline-none"
                 style={{
                   left: b.left,
                   top: b.top,
@@ -86,25 +86,14 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
                 }}
               />
             ))}
-            <ArrowDoodle className="absolute left-[40px] top-[6px] h-[36px] w-[54px]" rotate={-126} />
-            <ArrowDoodle className="absolute left-[770px] top-[18px] h-[36px] w-[54px]" rotate={58.65} />
-
+            
             {/* tag pills stuck to their matching blocks */}
-            <div
-              className="pointer-events-none absolute rounded-full px-4 py-1 font-display text-[13px] font-semibold"
-              style={{ left: 684, top: 144, backgroundColor: "#5162AA", color: "#F5F5F5" }}
-            >
-              #B8D8EA
-            </div>
-            <div
-              className="pointer-events-none absolute rounded-full px-4 py-1 font-display text-[13px] font-semibold"
-              style={{ left: 211, top: 0, backgroundColor: "#E87323", color: "#F5F5F5" }}
-            >
-              #F4D88E
-            </div>
+
           </div>
         </div>
-
+                      <p className="mx-auto mt-4 max-w-[560px] font-display text-[14px] leading-snug text-foreground/80 md:text-[18px]">
+            AI-powered color palette for designers who knows what they want
+          </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:hidden">
           {BLOCKS.map((b, i) => (
             <button

@@ -1,7 +1,7 @@
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-transparent">
-      <div className="mx-auto flex h-[64px] w-full max-w-[1100px] items-center justify-between px-6">
+      <div className="mx-auto flex h-[64px] w-full max-w-[1500px] items-center justify-between px-6">
         <a
           href="#top"
           className="font-display text-[20px] font-extrabold tracking-tight text-foreground transition-transform duration-200 hover:-rotate-2 md:text-[27px]"
