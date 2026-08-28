@@ -3,6 +3,7 @@ import {
   extractDominantColors,
   generateFieldPalette,
   generateTintRamp,
+  nextHoverColor,
   readableTextOn,
   type Category,
   type PaletteRole,
@@ -25,11 +26,17 @@ export function Workspace({
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [extracted, setExtracted] = useState<string[]>([]);
-  const [picked, setPicked] = useState("#E87323");
+  const [picked, setPicked] = useState<string | null>(null);
   const [count, setCount] = useState(6);
   const [category, setCategory] = useState<Category | null>(null);
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [saveColor, setSaveColor] = useState("#E87323");
+
+  // Hovering/focusing the Save button rerolls its color, same pool and
+  // sticky behavior as the hero cards — it doesn't revert on mouse-leave.
+  const rerollSaveColor = () => setSaveColor((c) => nextHoverColor(c));
 
   useEffect(() => {
     registerOpenPicker(() => inputRef.current?.click());
@@ -43,14 +50,21 @@ export function Workspace({
     if (colors[0]) setPicked(colors[0]);
   };
 
-  const ramp = generateTintRamp(picked, count);
+  const ramp = picked ? generateTintRamp(picked, count) : [];
   const output: PaletteRole[] | null =
-    category ? generateFieldPalette(picked, category, 5) : null;
+    picked && category ? generateFieldPalette(picked, category, 5) : null;
 
   const copy = (hex: string) => {
     navigator.clipboard?.writeText(hex);
     setCopied(hex);
     setTimeout(() => setCopied(null), 1200);
+  };
+
+  const savePalette = () => {
+    const hexes = (output ? output.map((o) => o.hex) : ramp).join(", ");
+    if (hexes) navigator.clipboard?.writeText(hexes);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
   };
 
   return (
@@ -104,39 +118,45 @@ export function Workspace({
             )}
           </button>
 
-          {extracted.length > 0 && (
-            <div className="mt-5 grid grid-cols-6 gap-[14px]">
-              {extracted.map((hex, i) => (
-                <button
-                  key={`${hex}-${i}`}
-                  type="button"
-                  onClick={() => setPicked(hex)}
-                  aria-label={`pick ${hex}`}
-                  className="h-[56px] rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px]"
-                  style={{
-                    backgroundColor: hex,
-                    outline:
-                      picked.toLowerCase() === hex.toLowerCase()
-                        ? "3px solid #0B0B0B"
-                        : "none",
-                    outlineOffset: "3px",
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          <p className="mt-5 font-display text-[14px] text-foreground md:text-[16px]">
+            colors extracted from the image
+          </p>
+          <div className="mt-3 grid grid-cols-6 gap-[14px]">
+            {Array.from({ length: 6 }, (_, i) => extracted[i]).map((hex, i) => (
+              <button
+                key={i}
+                type="button"
+                disabled={!hex}
+                onClick={() => hex && setPicked(hex)}
+                aria-label={hex ? `pick ${hex}` : "no extracted color yet"}
+                className="h-[56px] rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px]"
+                style={{
+                  backgroundColor: hex ?? "#D9D9D9",
+                  outline:
+                    hex && picked?.toLowerCase() === hex.toLowerCase()
+                      ? "3px solid #0B0B0B"
+                      : "none",
+                  outlineOffset: "3px",
+                }}
+              />
+            ))}
+          </div>
         </div>
 
         {/* RIGHT */}
         <div className="mx-auto w-full max-w-[460px]">
           <div
             className="flex h-[56px] w-full items-center justify-center rounded-[14px] font-display text-[15px] font-bold transition-colors duration-300"
-            style={{ backgroundColor: picked, color: readableTextOn(picked) }}
+            style={
+              picked
+                ? { backgroundColor: picked, color: readableTextOn(picked) }
+                : { backgroundColor: "#D9D9D9", color: "#6B6863" }
+            }
           >
-            {picked.toUpperCase()}
+            {picked ? picked.toUpperCase() : "Color Picked"}
           </div>
 
-          <p className="mt-6 font-display text-[20px] text-foreground">Palette:</p>
+          <p className="mt-6 font-display text-[20px] text-foreground">Palette</p>
 
           <div className="mt-4 flex items-start gap-5">
             <div
@@ -174,7 +194,10 @@ export function Workspace({
             </div>
           </div>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <p className="mt-7 font-display text-[20px] font-bold text-foreground">
+            What are you designing?
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
             {CATEGORIES.map((c) => {
               const active = category === c.label;
               return (
@@ -196,34 +219,48 @@ export function Workspace({
             })}
           </div>
 
+          <p className="mt-7 font-display text-[20px] font-bold text-foreground">
+            Generated color palette
+          </p>
           <div
-            className="mt-7 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-3 rounded-[10px] p-4"
+            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-3 rounded-[10px] p-4"
             style={{ backgroundColor: "#D9D9D9" }}
           >
-            {output ? (
-              output.map((s) => (
-                <button
-                  key={s.role}
-                  type="button"
-                  onClick={() => copy(s.hex)}
-                  title={`${s.role} — click to copy`}
-                  className="flex h-full flex-1 flex-col items-center justify-between rounded-[12px] py-4 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-                  style={{ backgroundColor: s.hex, color: readableTextOn(s.hex) }}
-                >
-                  <span className="font-display text-[12px] font-semibold">{s.role}</span>
-                  <span
-                    className="font-display text-[14px] font-bold"
-                    style={{ writingMode: "vertical-rl" }}
+            {output
+              ? output.map((s) => (
+                  <button
+                    key={s.role}
+                    type="button"
+                    onClick={() => copy(s.hex)}
+                    title={`${s.role} — click to copy`}
+                    className="flex h-full flex-1 flex-col items-center justify-between rounded-[12px] py-4 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+                    style={{ backgroundColor: s.hex, color: readableTextOn(s.hex) }}
                   >
-                    {copied === s.hex ? "copied!" : s.hex.toUpperCase()}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="px-6 text-center font-display text-[15px]" style={{ color: "#6B6863" }}>
-                pick a color and choose a field to generate your palette
-              </p>
-            )}
+                    <span className="font-display text-[12px] font-semibold">{s.role}</span>
+                    <span
+                      className="font-display text-[14px] font-bold"
+                      style={{ writingMode: "vertical-rl" }}
+                    >
+                      {copied === s.hex ? "copied!" : s.hex.toUpperCase()}
+                    </span>
+                  </button>
+                ))
+              : Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="h-full flex-1 rounded-[12px]" style={{ backgroundColor: "#C9C9C9" }} />
+                ))}
+          </div>
+
+          <div className="mt-5 flex justify-center">
+            <button
+              type="button"
+              onClick={savePalette}
+              onMouseEnter={rerollSaveColor}
+              onFocus={rerollSaveColor}
+              className="h-[44px] w-[170px] rounded-[10px] font-display text-[15px] font-semibold transition-colors duration-200 active:scale-95"
+              style={{ backgroundColor: saveColor, color: readableTextOn(saveColor) }}
+            >
+              {saved ? "saved!" : "Save palette"}
+            </button>
           </div>
         </div>
       </div>

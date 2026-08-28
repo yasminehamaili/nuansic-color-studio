@@ -7,14 +7,13 @@ const COLUMNS = [
     links: [
       { label: "color picker", color: "#1E997D" },
       { label: "ai palettes", color: "#7B37FE" },
-      { label: "image extract", color: "#FE564B" },
       { label: "saved palettes", color: "#FC71CE" },
     ],
   },
   {
-    title: "Fields",
+    title: "Explore",
     links: [
-      { label: "ui/ux design", color: "#1D5EDE" },
+      { label: "ui/ux", color: "#1D5EDE" },
       { label: "graphic design", color: "#FA925B" },
       { label: "fashion", color: "#FCD402" },
       { label: "interior", color: "#A2E07D" },
@@ -38,7 +37,10 @@ export function Footer() {
       <div className="mx-auto w-full max-w-[1500px] px-6">
         <div className="grid gap-10 lg:grid-cols-[300px_1fr_auto]">
           <div>
-            <h2 className="font-display text-[25px] font-semibold leading-tight text-foreground md:text-[26px]">
+            <span className="font-display text-[20px] font-extrabold tracking-tight text-foreground">
+              logo
+            </span>
+            <h2 className="mt-2 font-display text-[25px] font-semibold leading-tight text-foreground md:text-[26px]">
               pick a color. we&apos;ll build{" "}
               <span className="font-script text-[28px] font-bold text-accent md:text-[36px]">
                 your world
@@ -71,7 +73,7 @@ export function Footer() {
             <p className="mt-3 text-[12px] text-foreground">
               {sent
                 ? "thanks — you're on the list."
-                : "get color drops and palette tips. no spam, promise."}
+                : "get color inspiration delivered to your inbox"}
             </p>
           </div>
 
@@ -118,9 +120,9 @@ export function Footer() {
         </div>
 
         <div className="mt-12 space-y-1 text-center text-[12px] text-foreground/50">
-          <p>© 2026 nuansic</p>
+          <p>© 2026 nuansic.</p>
           <p>made with love and lots of color.</p>
-          <p>privacy / terms / cookies</p>
+          <p>privacy · terms · cookies</p>
         </div>
       </div>
     </footer>

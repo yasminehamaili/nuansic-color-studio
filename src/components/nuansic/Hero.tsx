@@ -33,13 +33,13 @@ function ArrowDoodle({ className, rotate }: { className?: string; rotate: number
 export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
   const [colors, setColors] = useState(BLOCKS.map((b) => b.color));
 
+  // Hovering rerolls a block to a new, hue-distinct color and the change
+  // sticks — it does NOT revert when the mouse leaves. Each hover keeps
+  // rerolling from wherever the block currently is.
   const reroll = (i: number) =>
     setColors((prev) =>
       prev.map((c, idx) => (idx === i ? nextHoverColor(c) : c)),
     );
-
-  const reset = (i: number) =>
-    setColors((prev) => prev.map((c, idx) => (idx === i ? BLOCKS[i]!.color : c)));
 
   return (
     <section
@@ -50,11 +50,11 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
         {/* Headline */}
         <div className="relative text-center">
           <h1 className="font-display text-[28px] font-semibold leading-[1.1] text-foreground sm:text-[36px] md:text-[45px]">
-            pick a color, we&apos;ll build
+            pick a color, tell us what you&apos;re creating
           </h1>
           <div className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3">
             <span className="font-display text-[28px] font-semibold text-foreground sm:text-[36px] md:text-[45px]">
-              your
+              we&apos;ll build your
             </span>
             <span className="font-script text-[38px] font-bold text-accent sm:text-[48px] md:text-[60px]">
               world
@@ -72,9 +72,7 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
                 type="button"
                 aria-label={`color block ${i + 1}`}
                 onMouseEnter={() => reroll(i)}
-                onMouseLeave={() => reset(i)}
                 onFocus={() => reroll(i)}
-                onBlur={() => reset(i)}
                 className="absolute h-[210px] w-[210px] rounded-[20px] outline-none"
                 style={{
                   left: b.left,
@@ -117,9 +115,9 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
           <button
             type="button"
             onClick={onUploadClick}
-            className="h-[44px] w-[170px] rounded-[12px] bg-foreground font-display text-[15px] font-medium text-background transition-all duration-200 hover:scale-105 active:scale-95 md:h-[46px] md:w-[186px] md:text-[18px]"
+            className="h-[44px] w-[170px] rounded-[12px] border-2 border-transparent bg-foreground font-display text-[15px] font-medium text-background transition-all duration-200 hover:border-foreground hover:bg-transparent hover:text-foreground active:scale-95 md:h-[46px] md:w-[186px] md:text-[18px]"
           >
-            upload an image
+            pick a color
           </button>
         </div>
       </div>

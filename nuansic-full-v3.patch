@@ -1,0 +1,516 @@
+diff --git a/src/components/nuansic/Creatives.tsx b/src/components/nuansic/Creatives.tsx
+index cf6148b..5c05641 100644
+--- a/src/components/nuansic/Creatives.tsx
++++ b/src/components/nuansic/Creatives.tsx
+@@ -1,10 +1,10 @@
+ const CHIPS = [
+-  { label: "#Colors", bg: "#AADCE3", fg: "#1D5ED6", rotate: -15, left: 17, top: 0 },
+-  { label: "#Design", bg: "#FCD402", fg: "#FC5649", rotate: 8, left: 220, top: 87 },
+-  { label: "#Interior", bg: "#FC71CE", fg: "#FFFFFF", rotate: -10, left: 32, top: 165 },
+-  { label: "#Fashion", bg: "#1D5EDE", fg: "#FCD401", rotate: 5, left: 177, top: 253 },
+-  { label: "#Graphic", bg: "#FA9359", fg: "#1E997D", rotate: -8, left: 0, top: 342 },
+-  { label: "#UIUX", bg: "#FE564B", fg: "#F3E7DB", rotate: 12, left: 177, top: 429 },
++  { label: "#Graphic", bg: "#FA9359", fg: "#1E997D", rotate: -9, left: 10, top: 10 },
++  { label: "#Design", bg: "#FCD402", fg: "#FC5649", rotate: 8, left: 168, top: 68 },
++  { label: "#Interior", bg: "#FC71CE", fg: "#FFFFFF", rotate: -8, left: 24, top: 128 },
++  { label: "#Fashion", bg: "#1D5EDE", fg: "#FCD401", rotate: 6, left: 140, top: 194 },
++  { label: "#Colors", bg: "#AADCE3", fg: "#1D5ED6", rotate: -6, left: 0, top: 262 },
++  { label: "#UIUX", bg: "#FE564B", fg: "#F3E7DB", rotate: 11, left: 140, top: 328 },
+ ];
+ 
+ export function Creatives() {
+@@ -20,15 +20,13 @@ export function Creatives() {
+           />
+           <div className="absolute left-0 top-[124px] w-[452px] px-7 text-center">
+             <span className="font-display text-[42px] font-extrabold tracking-tight text-foreground">
+-              nuansic
++              logo
+             </span>
+             <p
+               className="mt-8 font-display text-[27px] leading-[1.3]"
+               style={{ color: "#1E997D" }}
+             >
+-              is a color playground for creatives. Pick any shade you love, tell us your field,
+-              and our AI builds palettes that actually make sense, no more guessing, no more
+-              endless scrolling. Just colors that feel right.
++              A color playground for creative minds.
+             </p>
+           </div>
+ 
+@@ -45,18 +43,18 @@ export function Creatives() {
+           </h2>
+ 
+           {/* chip cluster */}
+-          <div className="absolute left-[650px] top-[122px] h-[507px] w-[418px]">
++          <div className="absolute left-[650px] top-[122px] h-[400px] w-[320px]">
+             {CHIPS.map((c) => (
+               <span
+                 key={c.label}
+-                className="absolute rounded-[19px] px-5 py-2 font-display text-[30px] font-bold transition-transform duration-200 hover:scale-110"
++                className="absolute rounded-[14px] px-4 py-1.5 font-display text-[22px] font-bold transition-transform duration-200 hover:scale-110"
+                 style={{
+                   left: c.left,
+                   top: c.top,
+                   backgroundColor: c.bg,
+                   color: c.fg,
+                   transform: `rotate(${c.rotate}deg)`,
+-                  filter: "drop-shadow(0px 5px 10px rgba(30,30,30,0.22))",
++                  filter: "drop-shadow(0px 4px 8px rgba(30,30,30,0.22))",
+                 }}
+               >
+                 {c.label}
+@@ -71,11 +69,9 @@ export function Creatives() {
+             className="relative mx-auto w-full max-w-150 px-6 py-8 text-center"
+             style={{ backgroundColor: "#A2E07D", borderRadius: "170px 170px 0 0" }}
+           >
+-            <span className="font-display text-[24px] font-extrabold text-foreground">nuansic</span>
++            <span className="font-display text-[24px] font-extrabold text-foreground">logo</span>
+             <p className="mt-4 font-display text-[16px] leading-snug" style={{ color: "#1E997D" }}>
+-              is a color playground for creatives. Pick any shade you love, tell us your field,
+-              and our AI builds palettes that actually make sense, no more guessing, no more
+-              endless scrolling. Just colors that feel right.
++              A color playground for creative minds.
+             </p>
+           </div>
+ 
+@@ -83,7 +79,7 @@ export function Creatives() {
+             {CHIPS.map((c) => (
+               <span
+                 key={c.label}
+-                className="rounded-[12px] px-4 py-1.5 font-display text-[18px] font-bold"
++                className="rounded-[10px] px-3 py-1 font-display text-[14px] font-bold"
+                 style={{
+                   backgroundColor: c.bg,
+                   color: c.fg,
+diff --git a/src/components/nuansic/Footer.tsx b/src/components/nuansic/Footer.tsx
+index a471dde..9f083c8 100644
+--- a/src/components/nuansic/Footer.tsx
++++ b/src/components/nuansic/Footer.tsx
+@@ -7,14 +7,13 @@ const COLUMNS = [
+     links: [
+       { label: "color picker", color: "#1E997D" },
+       { label: "ai palettes", color: "#7B37FE" },
+-      { label: "image extract", color: "#FE564B" },
+       { label: "saved palettes", color: "#FC71CE" },
+     ],
+   },
+   {
+-    title: "Fields",
++    title: "Explore",
+     links: [
+-      { label: "ui/ux design", color: "#1D5EDE" },
++      { label: "ui/ux", color: "#1D5EDE" },
+       { label: "graphic design", color: "#FA925B" },
+       { label: "fashion", color: "#FCD402" },
+       { label: "interior", color: "#A2E07D" },
+@@ -38,7 +37,10 @@ export function Footer() {
+       <div className="mx-auto w-full max-w-[1500px] px-6">
+         <div className="grid gap-10 lg:grid-cols-[300px_1fr_auto]">
+           <div>
+-            <h2 className="font-display text-[25px] font-semibold leading-tight text-foreground md:text-[26px]">
++            <span className="font-display text-[20px] font-extrabold tracking-tight text-foreground">
++              logo
++            </span>
++            <h2 className="mt-2 font-display text-[25px] font-semibold leading-tight text-foreground md:text-[26px]">
+               pick a color. we&apos;ll build{" "}
+               <span className="font-script text-[28px] font-bold text-accent md:text-[36px]">
+                 your world
+@@ -71,7 +73,7 @@ export function Footer() {
+             <p className="mt-3 text-[12px] text-foreground">
+               {sent
+                 ? "thanks — you're on the list."
+-                : "get color drops and palette tips. no spam, promise."}
++                : "get color inspiration delivered to your inbox"}
+             </p>
+           </div>
+ 
+@@ -118,9 +120,9 @@ export function Footer() {
+         </div>
+ 
+         <div className="mt-12 space-y-1 text-center text-[12px] text-foreground/50">
+-          <p>© 2026 nuansic</p>
++          <p>© 2026 nuansic.</p>
+           <p>made with love and lots of color.</p>
+-          <p>privacy / terms / cookies</p>
++          <p>privacy · terms · cookies</p>
+         </div>
+       </div>
+     </footer>
+diff --git a/src/components/nuansic/Header.tsx b/src/components/nuansic/Header.tsx
+index 4569a1c..00b840d 100644
+--- a/src/components/nuansic/Header.tsx
++++ b/src/components/nuansic/Header.tsx
+@@ -6,20 +6,20 @@ export function Header() {
+           href="#top"
+           className="font-display text-[20px] font-extrabold tracking-tight text-foreground transition-transform duration-200 hover:-rotate-2 md:text-[27px]"
+         >
+-          nuansic
++          logo
+         </a>
+         <nav className="flex items-center gap-2">
+           <button
+             type="button"
+             className="h-[34px] w-[72px] rounded-[30px] bg-muted text-[13px] font-medium text-foreground transition-all duration-200 hover:scale-105 active:scale-95 md:w-[80px]"
+           >
+-            Sign In
++            Sing In
+           </button>
+           <button
+             type="button"
+             className="h-[34px] w-[72px] rounded-[30px] bg-foreground text-[13px] font-medium text-background transition-all duration-200 hover:scale-105 active:scale-95 md:w-[80px]"
+           >
+-            Sign Up
++            Sing Up
+           </button>
+         </nav>
+       </div>
+diff --git a/src/components/nuansic/Hero.tsx b/src/components/nuansic/Hero.tsx
+index 9004d0e..a8d20ce 100644
+--- a/src/components/nuansic/Hero.tsx
++++ b/src/components/nuansic/Hero.tsx
+@@ -33,14 +33,14 @@ function ArrowDoodle({ className, rotate }: { className?: string; rotate: number
+ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
+   const [colors, setColors] = useState(BLOCKS.map((b) => b.color));
+ 
++  // Hovering rerolls a block to a new, hue-distinct color and the change
++  // sticks — it does NOT revert when the mouse leaves. Each hover keeps
++  // rerolling from wherever the block currently is.
+   const reroll = (i: number) =>
+     setColors((prev) =>
+       prev.map((c, idx) => (idx === i ? nextHoverColor(c) : c)),
+     );
+ 
+-  const reset = (i: number) =>
+-    setColors((prev) => prev.map((c, idx) => (idx === i ? BLOCKS[i]!.color : c)));
+-
+   return (
+     <section
+       id="top"
+@@ -50,11 +50,11 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
+         {/* Headline */}
+         <div className="relative text-center">
+           <h1 className="font-display text-[28px] font-semibold leading-[1.1] text-foreground sm:text-[36px] md:text-[45px]">
+-            pick a color, we&apos;ll build
++            pick a color, tell us what you&apos;re creating
+           </h1>
+           <div className="relative mt-1 flex flex-wrap items-baseline justify-center gap-x-3">
+             <span className="font-display text-[28px] font-semibold text-foreground sm:text-[36px] md:text-[45px]">
+-              your
++              we&apos;ll build your
+             </span>
+             <span className="font-script text-[38px] font-bold text-accent sm:text-[48px] md:text-[60px]">
+               world
+@@ -72,9 +72,7 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
+                 type="button"
+                 aria-label={`color block ${i + 1}`}
+                 onMouseEnter={() => reroll(i)}
+-                onMouseLeave={() => reset(i)}
+                 onFocus={() => reroll(i)}
+-                onBlur={() => reset(i)}
+                 className="absolute h-[210px] w-[210px] rounded-[20px] outline-none"
+                 style={{
+                   left: b.left,
+@@ -117,9 +115,9 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
+           <button
+             type="button"
+             onClick={onUploadClick}
+-            className="h-[44px] w-[170px] rounded-[12px] bg-foreground font-display text-[15px] font-medium text-background transition-all duration-200 hover:scale-105 active:scale-95 md:h-[46px] md:w-[186px] md:text-[18px]"
++            className="h-[44px] w-[170px] rounded-[12px] border-2 border-transparent bg-foreground font-display text-[15px] font-medium text-background transition-all duration-200 hover:border-foreground hover:bg-transparent hover:text-foreground active:scale-95 md:h-[46px] md:w-[186px] md:text-[18px]"
+           >
+-            upload an image
++            picke a color
+           </button>
+         </div>
+       </div>
+diff --git a/src/components/nuansic/Workspace.tsx b/src/components/nuansic/Workspace.tsx
+index ae26494..66748d5 100644
+--- a/src/components/nuansic/Workspace.tsx
++++ b/src/components/nuansic/Workspace.tsx
+@@ -3,6 +3,7 @@ import {
+   extractDominantColors,
+   generateFieldPalette,
+   generateTintRamp,
++  nextHoverColor,
+   readableTextOn,
+   type Category,
+   type PaletteRole,
+@@ -25,11 +26,17 @@ export function Workspace({
+   const inputRef = useRef<HTMLInputElement>(null);
+   const [preview, setPreview] = useState<string | null>(null);
+   const [extracted, setExtracted] = useState<string[]>([]);
+-  const [picked, setPicked] = useState("#E87323");
++  const [picked, setPicked] = useState<string | null>(null);
+   const [count, setCount] = useState(6);
+   const [category, setCategory] = useState<Category | null>(null);
+   const [dragging, setDragging] = useState(false);
+   const [copied, setCopied] = useState<string | null>(null);
++  const [saved, setSaved] = useState(false);
++  const [saveColor, setSaveColor] = useState("#E87323");
++
++  // Hovering/focusing the Save button rerolls its color, same pool and
++  // sticky behavior as the hero cards — it doesn't revert on mouse-leave.
++  const rerollSaveColor = () => setSaveColor((c) => nextHoverColor(c));
+ 
+   useEffect(() => {
+     registerOpenPicker(() => inputRef.current?.click());
+@@ -43,9 +50,9 @@ export function Workspace({
+     if (colors[0]) setPicked(colors[0]);
+   };
+ 
+-  const ramp = generateTintRamp(picked, count);
++  const ramp = picked ? generateTintRamp(picked, count) : [];
+   const output: PaletteRole[] | null =
+-    category ? generateFieldPalette(picked, category, 5) : null;
++    picked && category ? generateFieldPalette(picked, category, 5) : null;
+ 
+   const copy = (hex: string) => {
+     navigator.clipboard?.writeText(hex);
+@@ -53,6 +60,13 @@ export function Workspace({
+     setTimeout(() => setCopied(null), 1200);
+   };
+ 
++  const savePalette = () => {
++    const hexes = (output ? output.map((o) => o.hex) : ramp).join(", ");
++    if (hexes) navigator.clipboard?.writeText(hexes);
++    setSaved(true);
++    setTimeout(() => setSaved(false), 1500);
++  };
++
+   return (
+     <section
+       id="workspace"
+@@ -104,39 +118,45 @@ export function Workspace({
+             )}
+           </button>
+ 
+-          {extracted.length > 0 && (
+-            <div className="mt-5 grid grid-cols-6 gap-[14px]">
+-              {extracted.map((hex, i) => (
+-                <button
+-                  key={`${hex}-${i}`}
+-                  type="button"
+-                  onClick={() => setPicked(hex)}
+-                  aria-label={`pick ${hex}`}
+-                  className="h-[56px] rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px]"
+-                  style={{
+-                    backgroundColor: hex,
+-                    outline:
+-                      picked.toLowerCase() === hex.toLowerCase()
+-                        ? "3px solid #0B0B0B"
+-                        : "none",
+-                    outlineOffset: "3px",
+-                  }}
+-                />
+-              ))}
+-            </div>
+-          )}
++          <p className="mt-5 font-display text-[14px] text-foreground md:text-[16px]">
++            colors extracted from the image
++          </p>
++          <div className="mt-3 grid grid-cols-6 gap-[14px]">
++            {Array.from({ length: 6 }, (_, i) => extracted[i]).map((hex, i) => (
++              <button
++                key={i}
++                type="button"
++                disabled={!hex}
++                onClick={() => hex && setPicked(hex)}
++                aria-label={hex ? `pick ${hex}` : "no extracted color yet"}
++                className="h-[56px] rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px]"
++                style={{
++                  backgroundColor: hex ?? "#D9D9D9",
++                  outline:
++                    hex && picked?.toLowerCase() === hex.toLowerCase()
++                      ? "3px solid #0B0B0B"
++                      : "none",
++                  outlineOffset: "3px",
++                }}
++              />
++            ))}
++          </div>
+         </div>
+ 
+         {/* RIGHT */}
+         <div className="mx-auto w-full max-w-[460px]">
+           <div
+             className="flex h-[56px] w-full items-center justify-center rounded-[14px] font-display text-[15px] font-bold transition-colors duration-300"
+-            style={{ backgroundColor: picked, color: readableTextOn(picked) }}
++            style={
++              picked
++                ? { backgroundColor: picked, color: readableTextOn(picked) }
++                : { backgroundColor: "#D9D9D9", color: "#6B6863" }
++            }
+           >
+-            {picked.toUpperCase()}
++            {picked ? picked.toUpperCase() : "Color Picked"}
+           </div>
+ 
+-          <p className="mt-6 font-display text-[20px] text-foreground">Palette:</p>
++          <p className="mt-6 font-display text-[20px] text-foreground">Palette</p>
+ 
+           <div className="mt-4 flex items-start gap-5">
+             <div
+@@ -174,7 +194,10 @@ export function Workspace({
+             </div>
+           </div>
+ 
+-          <div className="mt-7 flex flex-wrap gap-3">
++          <p className="mt-7 font-display text-[20px] font-bold text-foreground">
++            What are you designing?
++          </p>
++          <div className="mt-3 flex flex-wrap gap-3">
+             {CATEGORIES.map((c) => {
+               const active = category === c.label;
+               return (
+@@ -196,34 +219,48 @@ export function Workspace({
+             })}
+           </div>
+ 
++          <p className="mt-7 font-display text-[20px] font-bold text-foreground">
++            Generated color palette
++          </p>
+           <div
+-            className="mt-7 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-3 rounded-[10px] p-4"
++            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-3 rounded-[10px] p-4"
+             style={{ backgroundColor: "#D9D9D9" }}
+           >
+-            {output ? (
+-              output.map((s) => (
+-                <button
+-                  key={s.role}
+-                  type="button"
+-                  onClick={() => copy(s.hex)}
+-                  title={`${s.role} — click to copy`}
+-                  className="flex h-full flex-1 flex-col items-center justify-between rounded-[12px] py-4 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+-                  style={{ backgroundColor: s.hex, color: readableTextOn(s.hex) }}
+-                >
+-                  <span className="font-display text-[12px] font-semibold">{s.role}</span>
+-                  <span
+-                    className="font-display text-[14px] font-bold"
+-                    style={{ writingMode: "vertical-rl" }}
++            {output
++              ? output.map((s) => (
++                  <button
++                    key={s.role}
++                    type="button"
++                    onClick={() => copy(s.hex)}
++                    title={`${s.role} — click to copy`}
++                    className="flex h-full flex-1 flex-col items-center justify-between rounded-[12px] py-4 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
++                    style={{ backgroundColor: s.hex, color: readableTextOn(s.hex) }}
+                   >
+-                    {copied === s.hex ? "copied!" : s.hex.toUpperCase()}
+-                  </span>
+-                </button>
+-              ))
+-            ) : (
+-              <p className="px-6 text-center font-display text-[15px]" style={{ color: "#6B6863" }}>
+-                pick a color and choose a field to generate your palette
+-              </p>
+-            )}
++                    <span className="font-display text-[12px] font-semibold">{s.role}</span>
++                    <span
++                      className="font-display text-[14px] font-bold"
++                      style={{ writingMode: "vertical-rl" }}
++                    >
++                      {copied === s.hex ? "copied!" : s.hex.toUpperCase()}
++                    </span>
++                  </button>
++                ))
++              : Array.from({ length: 6 }, (_, i) => (
++                  <div key={i} className="h-full flex-1 rounded-[12px]" style={{ backgroundColor: "#C9C9C9" }} />
++                ))}
++          </div>
++
++          <div className="mt-5 flex justify-center">
++            <button
++              type="button"
++              onClick={savePalette}
++              onMouseEnter={rerollSaveColor}
++              onFocus={rerollSaveColor}
++              className="h-[44px] w-[170px] rounded-[10px] font-display text-[15px] font-semibold transition-colors duration-200 active:scale-95"
++              style={{ backgroundColor: saveColor, color: readableTextOn(saveColor) }}
++            >
++              {saved ? "saved!" : "Save palette"}
++            </button>
+           </div>
+         </div>
+       </div>
+diff --git a/src/lib/color-ai.ts b/src/lib/color-ai.ts
+index 8e9eb69..ac5e43e 100644
+--- a/src/lib/color-ai.ts
++++ b/src/lib/color-ai.ts
+@@ -6,28 +6,27 @@
+  * network request (e.g. `await fetch('/api/extract')`) without touching the UI.
+  */
+ 
+-export const BRAND_PALETTE = [
+-"#7783F1",
+-"#F4D88E",
+-  "#D8B3DF",
+-  "#E1165F",
+-  "#B8D8EA",
+-  "#A2E07D",
+-  "#7C37FA",
+-  "#1E997D",
+-  "#FE564B",
+-  "#FA9359",
+-  "#1D5EDE",
+-  "#FCD402",
+-  "#FC71CE",
+-  "#FF8FA3",
+-  "#4ECDC4",
+-  "#C77DFF",
+-  "#FFB703",
+-  "#06D6A0",
+-  "#EF476F",
+-  "#118AB2",
+-] as const;
++/**
++ * A large, hue-diverse "pretty color" pool (100 colors).
++ * Generated by walking the hue wheel in golden-angle steps (~137.5°) so
++ * consecutive entries land far apart on the color wheel — no clusters of
++ * similar shades — while saturation/lightness are gently varied per entry
++ * to keep every color looking intentional rather than random/muddy.
++ */
++function buildBrandPalette(count: number): string[] {
++  const GOLDEN_ANGLE = 137.508;
++  const out: string[] = [];
++  let hue = 18;
++  for (let i = 0; i < count; i++) {
++    const s = 62 + ((i * 7) % 30); // 62–92% saturation
++    const l = 48 + ((i * 11) % 24); // 48–72% lightness
++    out.push(hslToHex(hue, s, l));
++    hue = (hue + GOLDEN_ANGLE) % 360;
++  }
++  return out;
++}
++
++export const BRAND_PALETTE = buildBrandPalette(100);
+ 
+ export type Category =
+   | "Graphic Design"
+@@ -241,10 +240,20 @@ export function generateFieldPalette(
+   });
+ }
+ 
+-/** Hover reroll: a brand color that is never the current one. */
++/**
++ * Hover reroll: picks a brand color that is meaningfully different from the
++ * current one — filtered by hue distance (not just a different hex) so a
++ * reroll never lands on another shade of the same color.
++ */
+ export function nextHoverColor(current: string): string {
+-  const pool = BRAND_PALETTE.filter(
+-    (c) => c.toLowerCase() !== current.toLowerCase(),
+-  );
+-  return pool[Math.floor(Math.random() * pool.length)]!;
++  const { h: currentHue } = hexToHsl(current);
++  const farEnough = (hex: string) => {
++    const { h } = hexToHsl(hex);
++    const diff = Math.abs(h - currentHue);
++    return Math.min(diff, 360 - diff) > 40;
++  };
++
++  const pool = BRAND_PALETTE.filter(farEnough);
++  const candidates = pool.length > 0 ? pool : BRAND_PALETTE;
++  return candidates[Math.floor(Math.random() * candidates.length)]!;
+ }
