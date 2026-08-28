@@ -3,13 +3,12 @@ import { nextHoverColor } from "@/lib/color-ai";
 
 /** Desktop canvas is the original 1440px design scaled to 60%. */
 const BLOCKS = [
-  { color: "#7783F1", left: 20,   top: 22, rotate: -12.13 },
-  { color: "#F4D88E", left: 180,  top: 30, rotate: -1.17 },
-  { color: "#D8B3DF", left: 340,  top: 15, rotate: -6.36 },
-  { color: "#E1165F", left: 500,  top: 26, rotate: 4.6 },
-  { color: "#B8D8EA", left: 660,  top: 18, rotate: 10.64 },
-  { color: "#FA9359", left: 820,  top: 24, rotate: -9 },
-  
+  { color: "#7783F1", left: 20, top: 22, rotate: -12.13 },
+  { color: "#F4D88E", left: 180, top: 30, rotate: -1.17 },
+  { color: "#D8B3DF", left: 340, top: 15, rotate: -6.36 },
+  { color: "#E1165F", left: 500, top: 26, rotate: 4.6 },
+  { color: "#B8D8EA", left: 660, top: 18, rotate: 10.64 },
+  { color: "#FA9359", left: 820, top: 24, rotate: -9 },
 ];
 
 function ArrowDoodle({ className, rotate }: { className?: string; rotate: number }) {
@@ -37,9 +36,7 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
   // sticks — it does NOT revert when the mouse leaves. Each hover keeps
   // rerolling from wherever the block currently is.
   const reroll = (i: number) =>
-    setColors((prev) =>
-      prev.map((c, idx) => (idx === i ? nextHoverColor(c) : c)),
-    );
+    setColors((prev) => prev.map((c, idx) => (idx === i ? nextHoverColor(c) : c)));
 
   return (
     <section
@@ -60,7 +57,6 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
               world
             </span>
           </div>
-
         </div>
 
         {/* Color blocks: absolute canvas on desktop, wrapped flex on mobile */}
@@ -84,14 +80,12 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
                 }}
               />
             ))}
-            
             {/* tag pills stuck to their matching blocks */}
-
           </div>
         </div>
-                      <p className="mx-auto mt-4 max-w-[560px] font-display text-[14px] leading-snug text-foreground/80 md:text-[18px]">
-            AI-powered color palette for designers who knows what they want
-          </p>
+        <p className="mx-auto mt-4 max-w-[560px] font-display text-[14px] leading-snug text-foreground/80 md:text-[18px]">
+          AI-powered color palette for designers who knows what they want
+        </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:hidden">
           {BLOCKS.map((b, i) => (
             <button

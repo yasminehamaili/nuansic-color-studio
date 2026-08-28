@@ -5,6 +5,9 @@ import { Hero } from "@/components/nuansic/Hero";
 import { Workspace } from "@/components/nuansic/Workspace";
 import { Creatives } from "@/components/nuansic/Creatives";
 import { Footer } from "@/components/nuansic/Footer";
+import PaletteGenerator from "../components/PaletteGenerator";
+
+// inside your route's component:
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,6 +48,7 @@ function Index() {
       <Header />
       <Hero onUploadClick={scrollAndOpen} />
       <Workspace registerOpenPicker={register} />
+      <PaletteGenerator />
       <Creatives />
       <Footer />
     </main>

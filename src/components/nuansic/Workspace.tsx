@@ -68,12 +68,8 @@ export function Workspace({
   };
 
   return (
-    <section
-      id="workspace"
-      className="flex w-full min-h-screen items-center justify-center py-12"
-    >
+    <section id="workspace" className="flex w-full min-h-screen items-center justify-center py-12">
       <div className="mx-auto grid w-full max-w-[1250px] items-center gap-16 px-6 lg:grid-cols-[minmax(0,600px)_minmax(0,460px)]">
-
         {/* LEFT */}
         <div className="mx-auto w-full max-w-[600px]">
           <input
@@ -246,7 +242,11 @@ export function Workspace({
                   </button>
                 ))
               : Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className="h-full flex-1 rounded-[12px]" style={{ backgroundColor: "#C9C9C9" }} />
+                  <div
+                    key={i}
+                    className="h-full flex-1 rounded-2xl"
+                    style={{ backgroundColor: "#C9C9C9" }}
+                  />
                 ))}
           </div>
 
