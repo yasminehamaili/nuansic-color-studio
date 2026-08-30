@@ -1,10 +1,11 @@
 /**
- * MOCK "AI" MODULE
- * -----------------------------------------------------------------------------
- * Every function here is a stand-in for a future real API call.
- * They are intentionally isolated & pure so each one can be swapped with a
- * network request (e.g. `await fetch('/api/extract')`) without touching the UI.
+ * COLOR AI MODULE — now backed by the real trained model at ../../backend.
+ * extractDominantColors and generatePalette call the FastAPI service.
+ * Everything else here (tint ramp, hover reroll, brand palette) is
+ * unrelated client-side UI logic and is unchanged.
  */
+
+const API_URL = "http://localhost:8000";
 
 /**
  * A large, hue-diverse "pretty color" pool (100 colors).
@@ -33,6 +34,14 @@ export type Category =
   | "UI/UX"
   | "fashion"
   | "Interior home design";
+
+// UI label -> API category code
+const CATEGORY_CODE: Record<Category, string> = {
+  "Graphic Design": "graphic_design",
+  "UI/UX": "uiux",
+  fashion: "fashion",
+  "Interior home design": "home_interior",
+};
 
 /* ------------------------------- color utils ------------------------------ */
 
@@ -107,77 +116,30 @@ export function readableTextOn(hex: string) {
   return lum > 0.6 ? "#0B0B0B" : "#F5F5F5";
 }
 
-/* --------------------------- MOCK #1: extraction -------------------------- */
+/* --------------------------- extraction (real API) ------------------------ */
 /**
- * Client-side dominant-color extraction via canvas pixel sampling.
- * Replace later with: POST image -> /api/extract-colors
+ * Sends the image to the trained backend, gets back candidate colors found
+ * in it, to fill the "colors extracted from the image" swatch row.
  */
 export async function extractDominantColors(
   file: File,
-  count = 6,
+  _count = 6,
 ): Promise<string[]> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const i = new Image();
-      i.onload = () => resolve(i);
-      i.onerror = reject;
-      i.src = url;
-    });
+  const form = new FormData();
+  form.append("image", file);
 
-    const size = 120;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return [];
-    ctx.drawImage(img, 0, 0, size, size);
-    const { data } = ctx.getImageData(0, 0, size, size);
-
-    // Bucket colors in a coarse 3D grid, then rank by frequency.
-    const buckets = new Map<string, { n: number; r: number; g: number; b: number }>();
-    for (let i = 0; i < data.length; i += 4) {
-      const a = data[i + 3]!;
-      if (a < 125) continue;
-      const r = data[i]!;
-      const g = data[i + 1]!;
-      const b = data[i + 2]!;
-      const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
-      const cur = buckets.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
-      cur.n++;
-      cur.r += r;
-      cur.g += g;
-      cur.b += b;
-      buckets.set(key, cur);
-    }
-
-    const ranked = [...buckets.values()]
-      .sort((a, b) => b.n - a.n)
-      .map((b) => rgbToHex(b.r / b.n, b.g / b.n, b.b / b.n));
-
-    // De-duplicate perceptually-close colors.
-    const out: string[] = [];
-    for (const hex of ranked) {
-      const { r, g, b } = hexToRgb(hex);
-      const tooClose = out.some((o) => {
-        const c = hexToRgb(o);
-        return (
-          Math.abs(c.r - r) + Math.abs(c.g - g) + Math.abs(c.b - b) < 60
-        );
-      });
-      if (!tooClose) out.push(hex);
-      if (out.length === count) break;
-    }
-    while (out.length < count && ranked.length)
-      out.push(ranked[out.length % ranked.length]!);
-    return out;
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const res = await fetch(`${API_URL}/extract-colors`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw new Error("extract-colors failed");
+  const data = await res.json();
+  return data.colors as string[];
 }
 
-/* --------------------------- MOCK #2: tint ramp --------------------------- */
-/** Lightness ramp of a single color, lightest -> darkest. */
+/* --------------------------- MOCK: tint ramp ------------------------------ */
+/** Lightness ramp of a single color, lightest -> darkest. (Client-side only,
+ * unrelated to the trained model — unchanged.) */
 export function generateTintRamp(hex: string, count = 6): string[] {
   const { h, s } = hexToHsl(hex);
   const top = 90;
@@ -188,56 +150,35 @@ export function generateTintRamp(hex: string, count = 6): string[] {
   );
 }
 
-/* ------------------------ MOCK #3: field palette AI ----------------------- */
-
-export type PaletteRole = {
-  role: string;
-  hex: string;
+/* ------------------------ field palette (real API) ------------------------ */
+/**
+ * Sends the picked color + category to the trained backend, gets back a
+ * rule-based palette (pure color theory — no dataset, no retrieval): the
+ * picked color plus however many companions that category's rules
+ * produce (5 for graphic_design/home_interior/fashion, 6 for uiux). Each
+ * color carries a real, rule-derived label — not a fabricated role.
+ */
+export type PaletteColor = { hex: string; label: string; note?: string };
+export type PaletteResult = {
+  palette: PaletteColor[];
+  summary: Record<string, string>;
 };
 
-const ROLES = ["Primary", "Secondary", "Accent", "Neutral", "Background"];
-
-/**
- * Derives a role-labeled palette from a picked color, flavored by field.
- * Replace later with: POST { color, category } -> /api/generate-palette
- */
-export function generateFieldPalette(
+export async function generatePalette(
   pickedColor: string,
   category: Category,
-  count = 5,
-): PaletteRole[] {
-  const { h, s, l } = hexToHsl(pickedColor);
+): Promise<PaletteResult> {
+  const form = new FormData();
+  form.append("base_color", pickedColor);
+  form.append("category", CATEGORY_CODE[category]);
 
-  const flavor: Record<
-    Category,
-    { s: number; l: number; spread: number; contrast: number }
-  > = {
-    "Graphic Design": { s: 1.15, l: 1, spread: 42, contrast: 1.1 },
-    "UI/UX": { s: 0.95, l: 1, spread: 25, contrast: 1.5 },
-    fashion: { s: 0.6, l: 1.02, spread: 30, contrast: 0.9 },
-    "Interior home design": { s: 0.75, l: 1.05, spread: 22, contrast: 0.85 },
-  };
-  const f = flavor[category];
-  const warmShift = category === "Interior home design" ? -12 : 0;
-
-  const recipe = [
-    { dh: 0, ds: 1, dl: 0 },
-    { dh: f.spread, ds: 0.92, dl: 8 * f.contrast },
-    { dh: -f.spread * 1.6, ds: 1.2, dl: -6 * f.contrast },
-    { dh: 0, ds: 0.18, dl: 22 },
-    { dh: 0, ds: 0.1, dl: 40 * f.contrast },
-  ];
-
-  const n = Math.max(3, Math.min(count, ROLES.length));
-  return Array.from({ length: n }, (_, i) => {
-    const r = recipe[i % recipe.length]!;
-    const hex = hslToHex(
-      h + r.dh + warmShift,
-      s * f.s * r.ds,
-      Math.max(10, Math.min(94, l * f.l + r.dl)),
-    );
-    return { role: ROLES[i]!, hex };
+  const res = await fetch(`${API_URL}/generate-palette`, {
+    method: "POST",
+    body: form,
   });
+  if (!res.ok) throw new Error("generate-palette failed");
+  const data = await res.json();
+  return { palette: data.palette as PaletteColor[], summary: data.summary };
 }
 
 /**

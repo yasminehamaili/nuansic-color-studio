@@ -6,6 +6,7 @@ import { Workspace } from "@/components/nuansic/Workspace";
 import { Creatives } from "@/components/nuansic/Creatives";
 import { Footer } from "@/components/nuansic/Footer";
 import PaletteGenerator from "../components/PaletteGenerator";
+import { ColorOfTheDay } from "@/components/nuansic/ColorOfTheDay";
 
 // inside your route's component:
 
@@ -48,6 +49,7 @@ function Index() {
       <Header />
       <Hero onUploadClick={scrollAndOpen} />
       <Workspace registerOpenPicker={register} />
+      <ColorOfTheDay />
       <PaletteGenerator />
       <Creatives />
       <Footer />

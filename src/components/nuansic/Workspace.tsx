@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import {
   extractDominantColors,
-  generateFieldPalette,
+  generatePalette,
   generateTintRamp,
   nextHoverColor,
   readableTextOn,
+  rgbToHex,
   type Category,
-  type PaletteRole,
+  type PaletteColor,
 } from "@/lib/color-ai";
+import { SelectImageModal } from "./SelectImageModal";
 
 const CATEGORIES: { label: Category; w: string }[] = [
   { label: "Graphic Design", w: "220px" },
@@ -23,8 +25,9 @@ export function Workspace({
 }: {
   registerOpenPicker: (fn: () => void) => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [extracted, setExtracted] = useState<string[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
   const [count, setCount] = useState(6);
@@ -33,26 +36,102 @@ export function Workspace({
   const [copied, setCopied] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saveColor, setSaveColor] = useState("#E87323");
+  const [output, setOutput] = useState<PaletteColor[] | null>(null);
+  const [summary, setSummary] = useState<Record<string, string> | null>(null);
+  const [loadingPalette, setLoadingPalette] = useState(false);
 
   // Hovering/focusing the Save button rerolls its color, same pool and
   // sticky behavior as the hero cards — it doesn't revert on mouse-leave.
   const rerollSaveColor = () => setSaveColor((c) => nextHoverColor(c));
 
   useEffect(() => {
-    registerOpenPicker(() => inputRef.current?.click());
+    registerOpenPicker(() => setModalOpen(true));
   }, [registerOpenPicker]);
+
+  // Draw the uploaded image onto the picker canvas, cropped to fill the box
+  // (same visual result as the old object-cover <img>, but as pixel data we
+  // can read from on click).
+  useEffect(() => {
+    if (!preview || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const canvasRatio = cw / ch;
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+      if (imgRatio > canvasRatio) {
+        sw = img.naturalHeight * canvasRatio;
+        sx = (img.naturalWidth - sw) / 2;
+      } else {
+        sh = img.naturalWidth / canvasRatio;
+        sy = (img.naturalHeight - sh) / 2;
+      }
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+    };
+    img.src = preview;
+  }, [preview]);
+
+  const handlePickFromCanvas = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(((e.clientX - rect.left) / rect.width) * canvas.width);
+    const y = Math.floor(((e.clientY - rect.top) / rect.height) * canvas.height);
+    const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
+    setPicked(rgbToHex(r, g, b));
+  };
 
   const handleFile = async (file?: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
     setPreview(URL.createObjectURL(file));
-    const colors = await extractDominantColors(file, 6);
-    setExtracted(colors);
-    if (colors[0]) setPicked(colors[0]);
+    setPicked(null);
+    setOutput(null);
+    try {
+      const colors = await extractDominantColors(file, 6);
+      setExtracted(colors);
+    } catch {
+      setExtracted([]);
+    }
   };
 
+  // Generate the palette whenever a color + category are both picked.
+  useEffect(() => {
+    if (!picked || !category) {
+      setOutput(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPalette(true);
+    generatePalette(picked, category)
+      .then((result) => {
+        if (!cancelled) {
+          setOutput(result.palette);
+          setSummary(result.summary);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOutput(null);
+          setSummary(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPalette(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [picked, category]);
+
   const ramp = picked ? generateTintRamp(picked, count) : [];
-  const output: PaletteRole[] | null =
-    picked && category ? generateFieldPalette(picked, category, 5) : null;
 
   const copy = (hex: string) => {
     navigator.clipboard?.writeText(hex);
@@ -61,7 +140,7 @@ export function Workspace({
   };
 
   const savePalette = () => {
-    const hexes = (output ? output.map((o) => o.hex) : ramp).join(", ");
+    const hexes = (output ? output.map((c) => c.hex) : ramp).join(", ");
     if (hexes) navigator.clipboard?.writeText(hexes);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
@@ -72,16 +151,7 @@ export function Workspace({
       <div className="mx-auto grid w-full max-w-[1250px] items-center gap-16 px-6 lg:grid-cols-[minmax(0,600px)_minmax(0,460px)]">
         {/* LEFT */}
         <div className="mx-auto w-full max-w-[600px]">
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files?.[0])}
-          />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
+          <div
             onDragOver={(e) => {
               e.preventDefault();
               setDragging(true);
@@ -92,30 +162,53 @@ export function Workspace({
               setDragging(false);
               handleFile(e.dataTransfer.files?.[0]);
             }}
-            className="flex h-[320px] w-full items-center justify-center overflow-hidden rounded-[16px] border-2 border-dashed transition-colors duration-200 lg:h-[480px]"
+            className="relative flex h-[320px] w-full items-center justify-center overflow-hidden rounded-[16px] border-2 border-dashed transition-colors duration-200 lg:h-[480px]"
             style={{
               borderColor: dragging ? "#E87323" : "#6B6863",
               backgroundColor: "#D9D9D9",
             }}
           >
             {preview ? (
-              <img src={preview} alt="uploaded preview" className="h-full w-full object-cover" />
+              <>
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={480}
+                  onClick={handlePickFromCanvas}
+                  className="h-full w-full cursor-crosshair"
+                  title="click anywhere on the image to pick that color"
+                />
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="absolute right-3 top-3 rounded-[8px] px-3 py-1.5 font-display text-[13px] font-semibold"
+                  style={{ backgroundColor: "#0B0B0B", color: "#F5F5F5" }}
+                >
+                  change image
+                </button>
+              </>
             ) : (
-              <span
-                className="font-display text-[18px] leading-relaxed md:text-[22px]"
-                style={{ color: "#6B6863" }}
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="flex h-full w-full items-center justify-center"
               >
-                Upload an image
-                <br />
-                or
-                <br />
-                drag and drop
-              </span>
+                <span
+                  className="font-display text-[18px] leading-relaxed md:text-[22px]"
+                  style={{ color: "#6B6863" }}
+                >
+                  Upload an image
+                  <br />
+                  or
+                  <br />
+                  drag and drop
+                </span>
+              </button>
             )}
-          </button>
+          </div>
 
           <p className="mt-5 font-display text-[14px] text-foreground md:text-[16px]">
-            colors extracted from the image
+            click anywhere on the image, or pick a swatch below
           </p>
           <div className="mt-3 grid grid-cols-6 gap-[14px]">
             {Array.from({ length: 6 }, (_, i) => extracted[i]).map((hex, i) => (
@@ -218,36 +311,44 @@ export function Workspace({
           <p className="mt-7 font-display text-[20px] font-bold text-foreground">
             Generated color palette
           </p>
+          {summary && (
+            <p className="mt-1 font-display text-[13px]" style={{ color: "#6B6863" }}>
+              {Object.values(summary)[0]}
+              {summary.rationale ? ` — ${summary.rationale}` : ""}
+            </p>
+          )}
           <div
-            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-3 rounded-[10px] p-4"
+            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-4"
             style={{ backgroundColor: "#D9D9D9" }}
           >
-            {output
-              ? output.map((s) => (
-                  <button
-                    key={s.role}
-                    type="button"
-                    onClick={() => copy(s.hex)}
-                    title={`${s.role} — click to copy`}
-                    className="flex h-full flex-1 flex-col items-center justify-between rounded-[12px] py-4 transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-                    style={{ backgroundColor: s.hex, color: readableTextOn(s.hex) }}
-                  >
-                    <span className="font-display text-[12px] font-semibold">{s.role}</span>
-                    <span
-                      className="font-display text-[14px] font-bold"
-                      style={{ writingMode: "vertical-rl" }}
-                    >
-                      {copied === s.hex ? "copied!" : s.hex.toUpperCase()}
-                    </span>
-                  </button>
-                ))
-              : Array.from({ length: 6 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="h-full flex-1 rounded-2xl"
-                    style={{ backgroundColor: "#C9C9C9" }}
-                  />
-                ))}
+            {loadingPalette ? (
+              <span className="font-display text-[14px]" style={{ color: "#6B6863" }}>
+                generating...
+              </span>
+            ) : output ? (
+              output.map((c, i) => (
+                <button
+                  key={`${c.hex}-${i}`}
+                  type="button"
+                  onClick={() => copy(c.hex)}
+                  title={`${c.label}${c.note ? " — " + c.note : ""}\nclick to copy ${c.hex}`}
+                  className="flex h-full flex-1 items-center justify-center rounded-[12px] transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+                  style={{ backgroundColor: c.hex, color: readableTextOn(c.hex) }}
+                >
+                  <span className="font-display text-[13px] font-bold" style={{ writingMode: "vertical-rl" }}>
+                    {copied === c.hex ? "copied!" : c.hex.toUpperCase()}
+                  </span>
+                </button>
+              ))
+            ) : (
+              Array.from({ length: 6 }, (_, i) => (
+                <div
+                  key={i}
+                  className="h-full flex-1 rounded-2xl"
+                  style={{ backgroundColor: "#C9C9C9" }}
+                />
+              ))
+            )}
           </div>
 
           <div className="mt-5 flex justify-center">
@@ -264,6 +365,12 @@ export function Workspace({
           </div>
         </div>
       </div>
+
+      <SelectImageModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onImageSelected={handleFile}
+      />
     </section>
   );
 }

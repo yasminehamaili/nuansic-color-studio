@@ -39,6 +39,7 @@ function PaletteGenerator() {
       <input
         type="file"
         accept="image/*"
+        className="hidden"
         onChange={(e) => handleImageUpload(e.target.files?.[0] as File)}
       />
 
