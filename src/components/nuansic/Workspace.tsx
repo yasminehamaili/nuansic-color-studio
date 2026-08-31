@@ -30,6 +30,14 @@ export function Workspace({
   const [modalOpen, setModalOpen] = useState(false);
   const [extracted, setExtracted] = useState<string[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
+  const [variation, setVariation] = useState(0);
+
+  // Picking a genuinely new color always starts fresh at variation 0 —
+  // only the "Generate another" button advances it from there.
+  const pickColor = (hex: string) => {
+    setVariation(0);
+    setPicked(hex);
+  };
   const [count, setCount] = useState(6);
   const [category, setCategory] = useState<Category | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -37,7 +45,6 @@ export function Workspace({
   const [saved, setSaved] = useState(false);
   const [saveColor, setSaveColor] = useState("#E87323");
   const [output, setOutput] = useState<PaletteColor[] | null>(null);
-  const [summary, setSummary] = useState<Record<string, string> | null>(null);
   const [loadingPalette, setLoadingPalette] = useState(false);
 
   // Hovering/focusing the Save button rerolls its color, same pool and
@@ -48,33 +55,52 @@ export function Workspace({
     registerOpenPicker(() => setModalOpen(true));
   }, [registerOpenPicker]);
 
-  // Draw the uploaded image onto the picker canvas, cropped to fill the box
-  // (same visual result as the old object-cover <img>, but as pixel data we
-  // can read from on click).
-  useEffect(() => {
-    if (!preview || !canvasRef.current) return;
+  const loadedImageRef = useRef<HTMLImageElement | null>(null);
+
+  const drawToCanvas = () => {
     const canvas = canvasRef.current;
+    const img = loadedImageRef.current;
+    if (!canvas || !img) return;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
+    // Match the backing pixel buffer to the canvas's actual rendered CSS
+    // size — otherwise the browser stretches whatever we draw to fill the
+    // element, distorting the image and undoing the letterbox math below.
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+    if (cw === 0 || ch === 0) return;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
+    const drawW = img.naturalWidth * scale;
+    const drawH = img.naturalHeight * scale;
+    const dx = (cw - drawW) / 2;
+    const dy = (ch - drawH) / 2;
+
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = "#D9D9D9"; // letterbox fill, matches the dropzone background
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, drawW, drawH);
+  };
+
+  // Draw the uploaded image onto the picker canvas, scaled to fit entirely
+  // inside the box (letterboxed if the aspect ratio doesn't match) — so a
+  // tall or wide image is always shown in full, never cropped. Redraws on
+  // window resize too, since the box's height is flexible (matches the
+  // right column) and can change.
+  useEffect(() => {
+    if (!preview) return;
     const img = new Image();
     img.onload = () => {
-      const cw = canvas.width;
-      const ch = canvas.height;
-      const canvasRatio = cw / ch;
-      const imgRatio = img.naturalWidth / img.naturalHeight;
-      let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
-      if (imgRatio > canvasRatio) {
-        sw = img.naturalHeight * canvasRatio;
-        sx = (img.naturalWidth - sw) / 2;
-      } else {
-        sh = img.naturalWidth / canvasRatio;
-        sy = (img.naturalHeight - sh) / 2;
-      }
-      ctx.clearRect(0, 0, cw, ch);
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+      loadedImageRef.current = img;
+      drawToCanvas();
     };
     img.src = preview;
+
+    window.addEventListener("resize", drawToCanvas);
+    return () => window.removeEventListener("resize", drawToCanvas);
   }, [preview]);
 
   const handlePickFromCanvas = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -86,13 +112,14 @@ export function Workspace({
     const x = Math.floor(((e.clientX - rect.left) / rect.width) * canvas.width);
     const y = Math.floor(((e.clientY - rect.top) / rect.height) * canvas.height);
     const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
-    setPicked(rgbToHex(r, g, b));
+    pickColor(rgbToHex(r, g, b));
   };
 
   const handleFile = async (file?: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
     setPreview(URL.createObjectURL(file));
     setPicked(null);
+    setVariation(0);
     setOutput(null);
     try {
       const colors = await extractDominantColors(file, 6);
@@ -102,7 +129,8 @@ export function Workspace({
     }
   };
 
-  // Generate the palette whenever a color + category are both picked.
+  // Generate the palette whenever a color + category are both picked, or
+  // when "Generate another" bumps the variation.
   useEffect(() => {
     if (!picked || !category) {
       setOutput(null);
@@ -110,17 +138,15 @@ export function Workspace({
     }
     let cancelled = false;
     setLoadingPalette(true);
-    generatePalette(picked, category)
+    generatePalette(picked, category, variation)
       .then((result) => {
         if (!cancelled) {
           setOutput(result.palette);
-          setSummary(result.summary);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setOutput(null);
-          setSummary(null);
         }
       })
       .finally(() => {
@@ -129,7 +155,7 @@ export function Workspace({
     return () => {
       cancelled = true;
     };
-  }, [picked, category]);
+  }, [picked, category, variation]);
 
   const ramp = picked ? generateTintRamp(picked, count) : [];
 
@@ -148,9 +174,9 @@ export function Workspace({
 
   return (
     <section id="workspace" className="flex w-full min-h-screen items-center justify-center py-12">
-      <div className="mx-auto grid w-full max-w-[1250px] items-center gap-16 px-6 lg:grid-cols-[minmax(0,600px)_minmax(0,460px)]">
+      <div className="mx-auto grid w-full max-w-[1250px] items-stretch gap-16 px-6 lg:grid-cols-[minmax(0,600px)_minmax(0,460px)]">
         {/* LEFT */}
-        <div className="mx-auto w-full max-w-[600px]">
+        <div className="mx-auto flex w-full max-w-[600px] flex-col">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -162,7 +188,7 @@ export function Workspace({
               setDragging(false);
               handleFile(e.dataTransfer.files?.[0]);
             }}
-            className="relative flex h-[320px] w-full items-center justify-center overflow-hidden rounded-[16px] border-2 border-dashed transition-colors duration-200 lg:h-[480px]"
+            className="relative flex w-full flex-1 min-h-[320px] items-center justify-center overflow-hidden rounded-[16px] border-2 border-dashed transition-colors duration-200"
             style={{
               borderColor: dragging ? "#E87323" : "#6B6863",
               backgroundColor: "#D9D9D9",
@@ -172,8 +198,6 @@ export function Workspace({
               <>
                 <canvas
                   ref={canvasRef}
-                  width={600}
-                  height={480}
                   onClick={handlePickFromCanvas}
                   className="h-full w-full cursor-crosshair"
                   title="click anywhere on the image to pick that color"
@@ -216,7 +240,7 @@ export function Workspace({
                 key={i}
                 type="button"
                 disabled={!hex}
-                onClick={() => hex && setPicked(hex)}
+                onClick={() => hex && pickColor(hex)}
                 aria-label={hex ? `pick ${hex}` : "no extracted color yet"}
                 className="h-[56px] rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px]"
                 style={{
@@ -235,14 +259,30 @@ export function Workspace({
         {/* RIGHT */}
         <div className="mx-auto w-full max-w-[460px]">
           <div
-            className="flex h-[56px] w-full items-center justify-center rounded-[14px] font-display text-[15px] font-bold transition-colors duration-300"
+            className="flex h-[56px] w-full items-center justify-between rounded-[14px] px-4 font-display text-[15px] font-bold transition-colors duration-300"
             style={
               picked
                 ? { backgroundColor: picked, color: readableTextOn(picked) }
                 : { backgroundColor: "#D9D9D9", color: "#6B6863" }
             }
           >
-            {picked ? picked.toUpperCase() : "Color Picked"}
+            <span className="flex-1 text-center">
+              {picked ? (copied === picked ? "copied!" : picked.toUpperCase()) : "Color Picked"}
+            </span>
+            {picked && (
+              <button
+                type="button"
+                onClick={() => copy(picked)}
+                aria-label="copy hex code"
+                title="copy hex code"
+                className="shrink-0 opacity-80 transition-opacity hover:opacity-100"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M3 10.5V3.5C3 2.67157 3.67157 2 4.5 2H10.5" stroke="currentColor" strokeWidth="1.3" />
+                </svg>
+              </button>
+            )}
           </div>
 
           <p className="mt-6 font-display text-[20px] text-foreground">Palette</p>
@@ -311,16 +351,8 @@ export function Workspace({
           <p className="mt-7 font-display text-[20px] font-bold text-foreground">
             Generated color palette
           </p>
-          {summary && (
-            <p className="mt-1 font-display text-[13px]" style={{ color: "#6B6863" }}>
-              {Object.values(summary)[0]}
-              {summary.rationale ? ` — ${summary.rationale}` : ""}
-            </p>
-          )}
           <div
-            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-4"
-            style={{ backgroundColor: "#D9D9D9" }}
-          >
+            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-4">
             {loadingPalette ? (
               <span className="font-display text-[14px]" style={{ color: "#6B6863" }}>
                 generating...
@@ -330,8 +362,11 @@ export function Workspace({
                 <button
                   key={`${c.hex}-${i}`}
                   type="button"
-                  onClick={() => copy(c.hex)}
-                  title={`${c.label}${c.note ? " — " + c.note : ""}\nclick to copy ${c.hex}`}
+                  onClick={() => {
+                    copy(c.hex);
+                    pickColor(c.hex);
+                  }}
+                  title={`${c.label}${c.note ? " — " + c.note : ""}\nclick to pick this color`}
                   className="flex h-full flex-1 items-center justify-center rounded-[12px] transition-transform duration-200 hover:-translate-y-1 active:scale-95"
                   style={{ backgroundColor: c.hex, color: readableTextOn(c.hex) }}
                 >
@@ -351,7 +386,16 @@ export function Workspace({
             )}
           </div>
 
-          <div className="mt-5 flex justify-center">
+          <div className="mt-5 flex justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setVariation((v) => v + 1)}
+              disabled={!picked || !category || loadingPalette}
+              className="h-[44px] rounded-[10px] px-5 font-display text-[15px] font-semibold transition-transform duration-150 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+              style={{ backgroundColor: "#0B0B0B", color: "#F5F5F5" }}
+            >
+              Generate another
+            </button>
             <button
               type="button"
               onClick={savePalette}

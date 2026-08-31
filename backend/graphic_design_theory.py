@@ -103,8 +103,8 @@ def classify_warmth(h_deg: float, s: float) -> str:
     return "warm" if (h_deg < 75 or h_deg >= 345) else "cool"
 
 
-def _pick_archetype(hex_color: str) -> str:
-    digest = hashlib.sha256(hex_color.encode()).hexdigest()
+def _pick_archetype(hex_color: str, variation: int = 0) -> str:
+    digest = hashlib.sha256(f"{hex_color}:{variation}".encode()).hexdigest()
     return ARCHETYPES[int(digest, 16) % len(ARCHETYPES)]
 
 
@@ -167,14 +167,17 @@ def _enforce_value_spread(lightness_values: list, min_spread=0.55) -> list:
     return adjusted
 
 
-def generate_graphic_design_palette(base_hex: str, h: float, l: float, s: float) -> dict:
+def generate_graphic_design_palette(base_hex: str, h: float, l: float, s: float, variation: int = 0) -> dict:
     """
     h, l, s are the base color's hue/lightness/saturation as fractions
-    (0-1), matching Python's colorsys convention.
+    (0-1), matching Python's colorsys convention. `variation` (0, 1, 2...)
+    picks a different valid archetype for the same color — used by the
+    "generate another" button so repeat clicks give different results
+    instead of the same one every time.
     Returns: { archetype, warmth, rationale, companions: [{hex, label}, x4] }
     """
     h_deg = h * 360
-    archetype = _pick_archetype(base_hex)
+    archetype = _pick_archetype(base_hex, variation)
     raw = _archetype_colors(archetype, h_deg, l, s)
 
     # Rule 2: snap each companion hue toward a nearby mnemonic anchor

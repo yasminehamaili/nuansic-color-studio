@@ -3,7 +3,7 @@ const CHIPS = [
   { label: "#Design", bg: "#FCD402", fg: "#FC5649", rotate: 8, left: 168, top: -20 },
   { label: "#Interior", bg: "#FC71CE", fg: "#FFFFFF", rotate: -8, left: 24, top: 15 },
   { label: "#Fashion", bg: "#1D5EDE", fg: "#FCD401", rotate: 6, left: 140, top: 50 },
-  { label: "#Colors", bg: "#AADCE3", fg: "#1D5ED6", rotate: -6, left: 50, top: 100 },
+  { label: "#Colors", bg: "#A2E07D ", fg: "#1E997D", rotate: -6, left: 50, top: 100 },
   { label: "#UIUX", bg: "#FE564B", fg: "#F3E7DB", rotate: 11, left: 180, top: 125 },
 ];
 
@@ -16,13 +16,11 @@ export function Creatives() {
           {/* green blob with logo + paragraph directly on it */}
           <div
             className="absolute left-0 top-[32px] h-[400px] w-[452px]"
-            style={{ backgroundColor: "#A2E07D", borderRadius: "226px 226px 0 0" }}
+            style={{ backgroundColor: "#AADCE3", borderRadius: "226px 226px 0 0"}}
           />
           <div className="absolute left-0 top-[155px] w-[452px] px-7 text-center">
-            <span className="font-display text-[42px] font-extrabold tracking-tight text-foreground">
-              logo
-            </span>
-            <p className="mt-8 font-display text-[27px] leading-[1.3]" style={{ color: "#1E997D" }}>
+            <img src="/nuansic-logo2.png" alt="Nuansic Logo" width={180} height={50} className="mx-auto" />
+            <p className="mt-8 font-display text-[27px] leading-[1.3]" style={{ color: "#1D5ED6" }}>
               A color playground for creative minds.
             </p>
           </div>

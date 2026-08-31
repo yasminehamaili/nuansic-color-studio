@@ -175,9 +175,11 @@ def _enforce_value_spread(lightness_values: list, min_spread=0.35) -> list:
     return adjusted
 
 
-def generate_home_interior_palette(base_hex: str, h: float, l: float, s: float) -> dict:
+def generate_home_interior_palette(base_hex: str, h: float, l: float, s: float, variation: int = 0) -> dict:
     """
     h, l, s are the base color's hue/lightness/saturation as fractions (0-1).
+    `variation` (0, 1, 2...) picks a different valid scheme/inspiration for
+    the same color — used by the "generate another" button.
     Returns: { scheme, energy, warmth, rationale, inspiration, companions:
                [{hex, material}, x4] }
     """
@@ -191,8 +193,8 @@ def generate_home_interior_palette(base_hex: str, h: float, l: float, s: float) 
         scheme = "monochromatic"
     else:
         options = SCHEMES_SUBDUED if energy == "subdued" else SCHEMES_ENERGIZING
-        scheme = _pick(base_hex, options, salt="scheme")
-    inspiration = _pick(base_hex, list(INSPIRATIONS.keys()), salt="inspiration")
+        scheme = _pick(base_hex, options, salt=f"scheme:{variation}")
+    inspiration = _pick(base_hex, list(INSPIRATIONS.keys()), salt=f"inspiration:{variation}")
 
     raw = _scheme_colors(scheme, h_deg, l, s)
     all_lightness = [l] + [ll for _, ll, _ in raw]

@@ -6,7 +6,13 @@ export function Header() {
           href="#top"
           className="font-display text-[20px] font-extrabold tracking-tight text-foreground transition-transform duration-200 hover:-rotate-2 md:text-[27px]"
         >
-          logo
+          <img
+            src="/nuansic-logo1.png"
+            alt="Nuansic Logo"
+            width={50}
+            height={50}
+            className="mt-4"
+          />
         </a>
         <nav className="flex items-center gap-2">
           <button

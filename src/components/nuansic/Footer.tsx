@@ -37,9 +37,7 @@ export function Footer() {
       <div className="mx-auto w-full max-w-[1500px] px-6">
         <div className="grid gap-10 lg:grid-cols-[300px_1fr_auto]">
           <div>
-            <span className="font-display text-[20px] font-extrabold tracking-tight text-foreground">
-              logo
-            </span>
+            <img src="/nuansic-logo2.png" alt="Nuansic Logo" width={100} height={50} className="mt-[-8px]" />
             <h2 className="mt-2 font-display text-[25px] font-semibold leading-tight text-foreground md:text-[26px]">
               pick a color. we&apos;ll build{" "}
               <span className="font-script text-[28px] font-bold text-accent md:text-[36px]">

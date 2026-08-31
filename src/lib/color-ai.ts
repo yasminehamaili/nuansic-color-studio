@@ -167,10 +167,12 @@ export type PaletteResult = {
 export async function generatePalette(
   pickedColor: string,
   category: Category,
+  variation = 0,
 ): Promise<PaletteResult> {
   const form = new FormData();
   form.append("base_color", pickedColor);
   form.append("category", CATEGORY_CODE[category]);
+  form.append("variation", String(variation));
 
   const res = await fetch(`${API_URL}/generate-palette`, {
     method: "POST",

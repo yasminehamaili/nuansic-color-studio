@@ -85,11 +85,11 @@ def _title(s: str) -> str:
     return s.replace("_", " ").title()
 
 
-def build_response(base_hex: str, category: str, h: float, l: float, s: float) -> dict:
+def build_response(base_hex: str, category: str, h: float, l: float, s: float, variation: int = 0) -> dict:
     palette = [{"hex": base_hex, "label": "Base — your pick"}]
 
     if category == "graphic_design":
-        result = generate_graphic_design_palette(base_hex, h, l, s)
+        result = generate_graphic_design_palette(base_hex, h, l, s, variation)
         for c in result["companions"]:
             palette.append({"hex": c["hex"], "label": c["label"]})
         summary = {
@@ -99,7 +99,7 @@ def build_response(base_hex: str, category: str, h: float, l: float, s: float) -
         }
 
     elif category == "home_interior":
-        result = generate_home_interior_palette(base_hex, h, l, s)
+        result = generate_home_interior_palette(base_hex, h, l, s, variation)
         for c in result["companions"]:
             palette.append({"hex": c["hex"], "label": _title(c["material"])})
         summary = {
@@ -111,7 +111,7 @@ def build_response(base_hex: str, category: str, h: float, l: float, s: float) -
         }
 
     elif category == "uiux":
-        result = generate_uiux_palette(base_hex, h, l, s)
+        result = generate_uiux_palette(base_hex, h, l, s, variation)
         for c in result["companions"]:
             palette.append({"hex": c["hex"], "label": _title(c["role"])})
         palette.append({"hex": result["cta"]["hex"], "label": "CTA / Call-to-action"})
@@ -124,7 +124,7 @@ def build_response(base_hex: str, category: str, h: float, l: float, s: float) -
         }
 
     elif category == "fashion":
-        result = generate_fashion_palette(base_hex, h, l, s)
+        result = generate_fashion_palette(base_hex, h, l, s, variation)
         for c in result["companions"]:
             entry = {"hex": c["hex"], "label": _title(c["role"])}
             if "note" in c:
@@ -188,24 +188,41 @@ def _color_for_date(date_str: str) -> str:
 
 
 def _headline_for(category: str, h: float, l: float, s: float) -> dict:
-    """One-line 'what this color does in this domain' summary, reusing
-    each theory module's own reasoning rather than writing new copy."""
+    """One-line 'what this color does in this domain' summary. Kept as a
+    single dash-free sentence for the Color of the Day card (the fuller,
+    dash-containing rationale is still used elsewhere in /generate-palette)."""
     if category == "graphic_design":
         r = generate_graphic_design_palette("#000000", h, l, s)
-        return {"headline": _title(r["archetype"]), "detail": r["rationale"]}
+        detail = {
+            "warm": "Reads as energizing and optimistic, drawing on associations built over thousands of years of human use.",
+            "cool": "Reads as calm and trustworthy, suited to a design that needs to feel composed rather than urgent.",
+            "neutral": "Carries little emotional charge on its own, leaving room for a single accent to do the persuading.",
+        }[r["warmth"]]
+        return {"headline": _title(r["archetype"]), "detail": detail}
 
     if category == "uiux":
         r = generate_uiux_palette("#000000", h, l, s)
-        return {"headline": f"{_title(r['scheme'])} scheme", "detail": r["background"]["note"]}
+        detail = {
+            "warm_vivid_caution": "Stimulating enough to suit a playful product, though risky as a full background if the interface needs to feel calm.",
+            "cool_trust": "Reads as safe and professional, so it can serve directly as the primary background or brand tone.",
+            "minimalist_grayscale": "Low saturation suggests a minimalist, content forward interface built around neutrals.",
+        }[r["background"]["strategy"]]
+        return {"headline": f"{_title(r['scheme'])} scheme", "detail": detail}
 
     if category == "home_interior":
         r = generate_home_interior_palette("#000000", h, l, s)
         article = "an" if r["energy"].startswith(("a", "e", "i", "o", "u")) else "a"
-        return {"headline": f"{_title(r['scheme'])}, for {article} {r['energy']} room", "detail": r["rationale"]}
+        detail = {
+            "warm": "Stimulating and inviting, best suited to a social space rather than a room meant purely for rest.",
+            "cool": "Calming and grounding, well suited to a bedroom or reading nook.",
+            "neutral": "Flexible and quiet, letting materials and furniture carry the room's visual interest.",
+        }[r["warmth"]]
+        return {"headline": f"{_title(r['scheme'])}, for {article} {r['energy']} room", "detail": detail}
 
     if category == "fashion":
         r = generate_fashion_palette("#000000", h, l, s)
-        return {"headline": r["season"], "detail": f"{r['undertone']}-toned, {r['value']} value, {r['chroma']} chroma."}
+        detail = f"A {r['undertone']} toned, {r['value']} value, {r['chroma']} chroma color family."
+        return {"headline": r["season"], "detail": detail}
 
     raise ValueError(category)
 
@@ -241,6 +258,7 @@ async def extract_colors(image: UploadFile = File(...)):
 async def generate_palette(
     category: str = Form(...),
     base_color: str = Form(...),
+    variation: int = Form(0),
 ):
     if category not in CATEGORIES:
         raise HTTPException(400, f"category must be one of {CATEGORIES}")
@@ -253,4 +271,4 @@ async def generate_palette(
     h, l, s = rgb_to_hls(base_rgb)
     base_hex = hls_to_hex(h, l, s)
 
-    return build_response(base_hex, category, h, l, s)
+    return build_response(base_hex, category, h, l, s, variation)

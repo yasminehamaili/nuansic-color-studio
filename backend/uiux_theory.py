@@ -96,8 +96,8 @@ def background_strategy(h_deg: float, l: float, s: float) -> dict:
     }
 
 
-def _pick_scheme(hex_color: str) -> str:
-    digest = hashlib.sha256(hex_color.encode()).hexdigest()
+def _pick_scheme(hex_color: str, variation: int = 0) -> str:
+    digest = hashlib.sha256(f"{hex_color}:{variation}".encode()).hexdigest()
     return SCHEMES[int(digest, 16) % len(SCHEMES)]
 
 
@@ -174,15 +174,17 @@ def _cta_color(h_deg: float, existing_hues: list) -> tuple:
     return chosen, 0.55, 0.8  # bright, high-saturation for visibility
 
 
-def generate_uiux_palette(base_hex: str, h: float, l: float, s: float) -> dict:
+def generate_uiux_palette(base_hex: str, h: float, l: float, s: float, variation: int = 0) -> dict:
     """
     h, l, s are the base color's hue/lightness/saturation as fractions (0-1).
+    `variation` (0, 1, 2...) picks a different valid scheme for the same
+    color — used by the "generate another" button.
     Returns: { scheme, warmth, background, gray_utility_note,
                companions: [{hex, rgb, hsl, role}, x4],
                cta: {hex, rgb, hsl, role} }
     """
     h_deg = h * 360
-    scheme = _pick_scheme(base_hex)
+    scheme = _pick_scheme(base_hex, variation)
     raw = _scheme_companions(scheme, h_deg, l, s)
 
     companions = []

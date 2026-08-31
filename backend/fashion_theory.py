@@ -141,22 +141,28 @@ def _season_color(season: dict, hex_color: str, salt: str) -> str:
     return _hls_to_hex(h_deg, l, s)
 
 
-def generate_fashion_palette(base_hex: str, h: float, l: float, s: float) -> dict:
+def generate_fashion_palette(base_hex: str, h: float, l: float, s: float, variation: int = 0) -> dict:
     """
     h, l, s are the base color's hue/lightness/saturation as fractions (0-1).
+    `variation` (0, 1, 2...) shifts which neighboring season is sampled and
+    where within each season's hue range the companions land — used by the
+    "generate another" button. It does NOT change which season the base
+    color itself is classified into (that's a property of the color, not a
+    style choice), only the variety of companions drawn from it.
     Returns: { season, undertone, value, chroma, companions: [{hex, role,
                note?}, x4] }
     """
     h_deg = h * 360
     season_idx = nearest_season(h_deg, l, s)
     season = SEASONS[season_idx]
-    neighbor = SEASONS[(season_idx + 1) % len(SEASONS)]
+    neighbor_offset = [1, -1, 2, -2][variation % 4]
+    neighbor = SEASONS[(season_idx + neighbor_offset) % len(SEASONS)]
 
     companions = [
-        {"hex": _season_color(season, base_hex, "core1"), "role": "near_face_core"},
-        {"hex": _season_color(season, base_hex, "core2"), "role": "near_face_core"},
+        {"hex": _season_color(season, base_hex, f"core1:{variation}"), "role": "near_face_core"},
+        {"hex": _season_color(season, base_hex, f"core2:{variation}"), "role": "near_face_core"},
         {
-            "hex": _season_color(neighbor, base_hex, "neighbor"),
+            "hex": _season_color(neighbor, base_hex, f"neighbor:{variation}"),
             "role": "away_from_face_flexible",
             "note": f"Pulled from {neighbor['name']}, a neighboring season — "
                     f"per Rees, the 12 palettes aren't fully exclusive, so "

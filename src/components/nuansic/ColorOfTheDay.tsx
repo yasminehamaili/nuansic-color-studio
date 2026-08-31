@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { readableTextOn } from "@/lib/color-ai";
 
 const API_URL = "http://localhost:8000";
 
 const LABELS: Record<string, string> = {
-  graphic_design: "Graphic Design",
   uiux: "UI/UX",
+  graphic_design: "Graphic Design",
   home_interior: "Interior Home Design",
   fashion: "Fashion",
 };
+
+const ORDER = ["uiux", "graphic_design", "home_interior", "fashion"];
 
 type Entry = { headline: string; detail: string };
 type ColorOfTheDayResponse = {
@@ -41,33 +42,40 @@ export function ColorOfTheDay() {
 
   if (loading || !data) return null;
 
-  const textColor = readableTextOn(data.color);
-
   return (
-    <section className="w-full height-[200px]">
-      <div className="mx-auto max-w-[2000px]">
-        <div
-          className="mt-4 flex flex-col gap-8 p-8 md:flex-row md:items-start height-[2000px] "
-          style={{ backgroundColor: data.color, color: textColor }}
-        >
-          <div className="flex flex-col items-start md:w-[180px] md:shrink-0">
-            <span className="font-display text-[28px] font-bold">{data.color.toUpperCase()}</span>
-            <span className="mt-1 font-display text-[13px] opacity-80">{data.date}</span>
-          </div>
+    <section className="w-full py-3">
+      <div className="mx-auto max-w-[1000px] rounded-[16px] px-6 py-12">
+        <div className="flex flex-col items-center text-center">
+          <span className="font-display text-[32px] font-bold text-black">
+            {data.color.toUpperCase()}
+          </span>
+          <div
+            className="mt-4 h-[96px] w-[96px] rounded-[16px]"
+            style={{ backgroundColor: data.color }}
+          />
+        </div>
 
-          <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-2">
-            {Object.entries(data.entries).map(([category, entry]) => (
-              <div key={category}>
-                <p className="font-display text-[13px] font-semibold uppercase tracking-wide opacity-70">
+        <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
+          {ORDER.map((category) => {
+            const entry = data.entries[category];
+            if (!entry) return null;
+            return (
+              <div key={category} className="text-center">
+                <p
+                  className="font-display text-[13px] font-bold uppercase tracking-wide"
+                  style={{ color: data.color }}
+                >
                   {LABELS[category] ?? category}
                 </p>
-                <p className="mt-1 font-display text-[15px] font-bold">{entry.headline}</p>
-                <p className="mt-1 font-display text-[13px] leading-snug opacity-90">
+                <p className="mt-1 font-display text-[14px] font-bold text-#0B0B0B">
+                  {entry.headline}
+                </p>
+                <p className="mt-1 font-display text-[12px] leading-snug text-#0B0B0B/70">
                   {entry.detail}
                 </p>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>
