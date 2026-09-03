@@ -9,17 +9,18 @@ import {
   type Category,
   type PaletteColor,
 } from "@/lib/color-ai";
+import { supabase } from "@/lib/supabase-client";
 import { SelectImageModal } from "./SelectImageModal";
-
+ 
 const CATEGORIES: { label: Category; w: string }[] = [
   { label: "Graphic Design", w: "220px" },
   { label: "UI/UX", w: "92px" },
   { label: "fashion", w: "112px" },
   { label: "Interior home design", w: "244px" },
 ];
-
+ 
 export type WorkspaceHandle = { openPicker: () => void };
-
+ 
 export function Workspace({
   registerOpenPicker,
 }: {
@@ -31,7 +32,7 @@ export function Workspace({
   const [extracted, setExtracted] = useState<string[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
   const [variation, setVariation] = useState(0);
-
+ 
   // Picking a genuinely new color always starts fresh at variation 0 —
   // only the "Generate another" button advances it from there.
   const pickColor = (hex: string) => {
@@ -42,28 +43,28 @@ export function Workspace({
   const [category, setCategory] = useState<Category | null>(null);
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error" | "not-logged-in">("idle");
   const [saveColor, setSaveColor] = useState("#E87323");
   const [output, setOutput] = useState<PaletteColor[] | null>(null);
   const [loadingPalette, setLoadingPalette] = useState(false);
-
+ 
   // Hovering/focusing the Save button rerolls its color, same pool and
   // sticky behavior as the hero cards — it doesn't revert on mouse-leave.
   const rerollSaveColor = () => setSaveColor((c) => nextHoverColor(c));
-
+ 
   useEffect(() => {
     registerOpenPicker(() => setModalOpen(true));
   }, [registerOpenPicker]);
-
+ 
   const loadedImageRef = useRef<HTMLImageElement | null>(null);
-
+ 
   const drawToCanvas = () => {
     const canvas = canvasRef.current;
     const img = loadedImageRef.current;
     if (!canvas || !img) return;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
-
+ 
     // Match the backing pixel buffer to the canvas's actual rendered CSS
     // size — otherwise the browser stretches whatever we draw to fill the
     // element, distorting the image and undoing the letterbox math below.
@@ -72,19 +73,19 @@ export function Workspace({
     if (cw === 0 || ch === 0) return;
     canvas.width = cw;
     canvas.height = ch;
-
+ 
     const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
     const drawW = img.naturalWidth * scale;
     const drawH = img.naturalHeight * scale;
     const dx = (cw - drawW) / 2;
     const dy = (ch - drawH) / 2;
-
+ 
     ctx.clearRect(0, 0, cw, ch);
     ctx.fillStyle = "#D9D9D9"; // letterbox fill, matches the dropzone background
     ctx.fillRect(0, 0, cw, ch);
     ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, drawW, drawH);
   };
-
+ 
   // Draw the uploaded image onto the picker canvas, scaled to fit entirely
   // inside the box (letterboxed if the aspect ratio doesn't match) — so a
   // tall or wide image is always shown in full, never cropped. Redraws on
@@ -98,11 +99,11 @@ export function Workspace({
       drawToCanvas();
     };
     img.src = preview;
-
+ 
     window.addEventListener("resize", drawToCanvas);
     return () => window.removeEventListener("resize", drawToCanvas);
   }, [preview]);
-
+ 
   const handlePickFromCanvas = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -114,7 +115,7 @@ export function Workspace({
     const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
     pickColor(rgbToHex(r, g, b));
   };
-
+ 
   const handleFile = async (file?: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
     setPreview(URL.createObjectURL(file));
@@ -128,7 +129,7 @@ export function Workspace({
       setExtracted([]);
     }
   };
-
+ 
   // Generate the palette whenever a color + category are both picked, or
   // when "Generate another" bumps the variation.
   useEffect(() => {
@@ -156,23 +157,40 @@ export function Workspace({
       cancelled = true;
     };
   }, [picked, category, variation]);
-
+ 
   const ramp = picked ? generateTintRamp(picked, count) : [];
-
+ 
   const copy = (hex: string) => {
     navigator.clipboard?.writeText(hex);
     setCopied(hex);
     setTimeout(() => setCopied(null), 1200);
   };
-
-  const savePalette = () => {
-    const hexes = (output ? output.map((c) => c.hex) : ramp).join(", ");
-    if (hexes) navigator.clipboard?.writeText(hexes);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
-  };
-
-  return (
+ 
+  const savePalette = async () => {
+    const toSave = output ?? ramp.map((hex) => ({ hex, label: "Shade" }));
+    if (toSave.length === 0) return;
+ 
+    setSaveState("saving");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setSaveState("not-logged-in");
+      setTimeout(() => setSaveState("idle"), 2200);
+      return;
+    }
+ 
+    const { error } = await supabase
+      .from("palettes")
+      .insert({ user_id: user.id, colors: toSave });
+ 
+    if (error) {
+      setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 2200);
+      return;
+    }
+ 
+    setSaveState("saved");
+    setTimeout(() => setSaveState("idle"), 1500);
+  };return (
     <section id="workspace" className="flex w-full min-h-screen items-center justify-center py-12">
       <div className="mx-auto grid w-full max-w-[1250px] items-stretch gap-16 px-6 lg:grid-cols-[minmax(0,600px)_minmax(0,460px)]">
         {/* LEFT */}
@@ -284,45 +302,6 @@ export function Workspace({
               </button>
             )}
           </div>
-
-          <p className="mt-6 font-display text-[20px] text-foreground">Palette</p>
-
-          <div className="mt-4 flex items-start gap-5">
-            <div
-              className="flex h-[56px] w-full max-w-[380px] overflow-hidden rounded-[14px]"
-              style={{ backgroundColor: "#D9D9D9" }}
-            >
-              {ramp.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  onClick={() => copy(hex)}
-                  title={hex}
-                  className="h-full flex-1 transition-transform duration-200 hover:scale-y-110"
-                  style={{ backgroundColor: hex }}
-                />
-              ))}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <button
-                type="button"
-                onClick={() => setCount((c) => Math.min(10, c + 1))}
-                className="h-[26px] w-[28px] rounded-[7px] text-[16px] leading-none text-foreground transition-transform duration-150 hover:scale-110 active:scale-95"
-                style={{ backgroundColor: "#D9D9D9" }}
-              >
-                +
-              </button>
-              <button
-                type="button"
-                onClick={() => setCount((c) => Math.max(3, c - 1))}
-                className="h-[26px] w-[28px] rounded-[7px] text-[16px] leading-none text-foreground transition-transform duration-150 hover:scale-110 active:scale-95"
-                style={{ backgroundColor: "#D9D9D9" }}
-              >
-                −
-              </button>
-            </div>
-          </div>
-
           <p className="mt-7 font-display text-[20px] font-bold text-foreground">
             What are you designing?
           </p>
@@ -352,7 +331,7 @@ export function Workspace({
             Generated color palette
           </p>
           <div
-            className="mt-3 flex h-[220px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-4">
+            className="mt-3 flex h-[320px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-4">
             {loadingPalette ? (
               <span className="font-display text-[14px]" style={{ color: "#6B6863" }}>
                 generating...
@@ -401,10 +380,15 @@ export function Workspace({
               onClick={savePalette}
               onMouseEnter={rerollSaveColor}
               onFocus={rerollSaveColor}
-              className="h-[44px] w-[170px] rounded-[10px] font-display text-[15px] font-semibold transition-colors duration-200 active:scale-95"
+              disabled={saveState === "saving"}
+              className="h-[44px] w-[170px] rounded-[10px] font-display text-[15px] font-semibold transition-colors duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
               style={{ backgroundColor: saveColor, color: readableTextOn(saveColor) }}
             >
-              {saved ? "saved!" : "Save palette"}
+              {saveState === "saving" && "Saving..."}
+              {saveState === "saved" && "Saved!"}
+              {saveState === "error" && "Couldn't save"}
+              {saveState === "not-logged-in" && "Log in to save"}
+              {saveState === "idle" && "Save palette"}
             </button>
           </div>
         </div>
