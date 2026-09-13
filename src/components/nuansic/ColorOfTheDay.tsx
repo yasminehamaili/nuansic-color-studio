@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 // deployed — Railway/Render/Fly.io, per the project's own deploy notes.
 // Without this env var set, palette generation silently fails for every
 // real visitor, since their browser has no server listening on localhost.
-const API_URL = import.meta.env['VITE_PALETTE_API_URL'] || "http://localhost:8000";
+const API_URL = import.meta.env["VITE_PALETTE_API_URL"] || "http://localhost:8000";
 
 const LABELS: Record<string, string> = {
   uiux: "UI/UX",
