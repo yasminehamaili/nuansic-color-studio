@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useRequireAuth } from "../../lib/useRequireAuth";
 import { useUserProfile } from "../../lib/useUserProfile";
 import { usernameFromId } from "../../lib/username";
+import { PageShell } from "./PageShell";
 
 export function ProfilePage() {
   const { user, loading: authLoading } = useRequireAuth();
@@ -16,7 +17,11 @@ export function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (authLoading || loading || !profile) {
-    return <div className="p-10 text-center text-neutral-500">Loading profile…</div>;
+    return (
+      <PageShell>
+        <div className="p-10 text-center text-neutral-500">Loading profile…</div>
+      </PageShell>
+    );
   }
 
   const fallbackName = usernameFromId(profile.id);
@@ -64,6 +69,7 @@ export function ProfilePage() {
   }
 
   return (
+    <PageShell>
     <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="text-2xl font-semibold mb-8">User profile</h1>
 
@@ -165,5 +171,6 @@ export function ProfilePage() {
       {status === "error" && <p className="mt-4 text-sm text-red-600">{errorMsg}</p>}
       {status === "saved" && <p className="mt-4 text-sm text-green-600">Saved.</p>}
     </div>
+    </PageShell>
   );
 }

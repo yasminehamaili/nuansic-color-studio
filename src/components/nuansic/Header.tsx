@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase-client";
 import { AccountMenu } from "./AccountMenu";
@@ -7,6 +7,8 @@ import { AccountMenu } from "./AccountMenu";
 export function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [checked, setChecked] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -21,11 +23,25 @@ export function Header() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // On the homepage the logo scrolls back up to the hero. On every other
+  // page (now that the header shows everywhere) it needs to actually
+  // navigate home instead — "#top" only ever meant something on "/".
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      document.getElementById("top")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      e.preventDefault();
+      navigate({ to: "/" });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full bg-transparent">
       <div className="mx-auto flex h-[64px] w-full max-w-[1500px] items-center justify-between px-6">
         <a
-          href="#top"
+          href="/"
+          onClick={handleLogoClick}
           className="font-display text-[20px] font-extrabold tracking-tight text-foreground transition-transform duration-200 hover:-rotate-2 md:text-[27px]"
         >
           <img

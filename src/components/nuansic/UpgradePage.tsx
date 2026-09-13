@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../../lib/supabase-client";
 import { useRequireAuth } from "../../lib/useRequireAuth";
 import { useUserProfile } from "../../lib/useUserProfile";
+import { PageShell } from "./PageShell";
 
 const PACKS = [
   { id: "pack_20", label: "20 credits", price: "$4.99", blurb: "Try it out" },
@@ -52,10 +53,15 @@ export function UpgradePage() {
   }
 
   if (authLoading || loading || !profile) {
-    return <div className="p-10 text-center text-neutral-500">Loading…</div>;
+    return (
+      <PageShell>
+        <div className="p-10 text-center text-neutral-500">Loading…</div>
+      </PageShell>
+    );
   }
 
   return (
+    <PageShell>
     <div className="mx-auto max-w-3xl px-6 py-16 text-center">
       <h1 className="text-3xl font-semibold mb-2">Get more AI credits</h1>
       <p className="text-neutral-500 mb-1">
@@ -92,5 +98,6 @@ export function UpgradePage() {
         automatically once payment is confirmed.
       </p>
     </div>
+    </PageShell>
   );
 }

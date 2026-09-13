@@ -15,7 +15,7 @@
 create table public.users (
   id         uuid primary key references auth.users (id) on delete cascade,
   email      text not null,
-  ai_credits integer not null default 5,
+  ai_credits integer not null default 10,
   created_at timestamptz not null default now()
 );
 
@@ -68,14 +68,14 @@ create policy "palettes_select_own"
   for select
   using (auth.uid() = user_id);
 
--- WITH CHECK is what actually stops a user from inserting a row with
--- someone else's user_id — USING alone only governs which existing rows a
--- statement can see/target, not what values are allowed in a new row.
-create policy "palettes_insert_own"
-  on public.palettes
-  for insert
-  with check (auth.uid() = user_id);
-
+-- Deliberately NO insert policy for anon/authenticated here. The only
+-- sanctioned way a row gets into this table is create_palette() below,
+-- which is SECURITY DEFINER (so it doesn't need an insert policy to write)
+-- and which is also where a credit actually gets spent. An insert policy
+-- here would let any authenticated user save palettes directly via
+-- `supabase.from("palettes").insert(...)` from the client, bypassing the
+-- credit check entirely -- this was a real gap in an earlier version of
+-- this schema, found and closed during a security pass.
 create policy "palettes_delete_own"
   on public.palettes
   for delete

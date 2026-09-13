@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   extractDominantColors,
   generatePalette,
@@ -26,6 +27,7 @@ export function Workspace({
 }: {
   registerOpenPicker: (fn: () => void) => void;
 }) {
+  const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,7 +45,7 @@ export function Workspace({
   const [category, setCategory] = useState<Category | null>(null);
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error" | "not-logged-in">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error" | "not-logged-in" | "no-credits">("idle");
   const [saveColor, setSaveColor] = useState("#E87323");
   const [output, setOutput] = useState<PaletteColor[] | null>(null);
   const [loadingPalette, setLoadingPalette] = useState(false);
@@ -169,7 +171,7 @@ export function Workspace({
   const savePalette = async () => {
     const toSave = output ?? ramp.map((hex) => ({ hex, label: "Shade" }));
     if (toSave.length === 0) return;
- 
+
     setSaveState("saving");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -177,17 +179,24 @@ export function Workspace({
       setTimeout(() => setSaveState("idle"), 2200);
       return;
     }
- 
-    const { error } = await supabase
-      .from("palettes")
-      .insert({ user_id: user.id, colors: toSave });
- 
+
+    // Goes through create_palette() (a SECURITY DEFINER RPC), NOT a plain
+    // insert. That function is what atomically checks + deducts 1 credit
+    // and saves the palette in the same transaction -- a direct insert here
+    // would save the palette for free and never touch ai_credits at all.
+    const { error } = await supabase.rpc("create_palette", { colors: toSave });
+
     if (error) {
-      setSaveState("error");
-      setTimeout(() => setSaveState("idle"), 2200);
+      const outOfCredits = error.message.includes("no ai credits remaining");
+      setSaveState(outOfCredits ? "no-credits" : "error");
+      // "no-credits" stays put (it doubles as a button to /upgrade) instead
+      // of quietly reverting to "Save palette" like the other transient states.
+      if (!outOfCredits) {
+        setTimeout(() => setSaveState("idle"), 2200);
+      }
       return;
     }
- 
+
     setSaveState("saved");
     setTimeout(() => setSaveState("idle"), 1500);
   };return (
@@ -377,7 +386,13 @@ export function Workspace({
             </button>
             <button
               type="button"
-              onClick={savePalette}
+              onClick={() => {
+                if (saveState === "no-credits") {
+                  navigate({ to: "/upgrade" });
+                  return;
+                }
+                savePalette();
+              }}
               onMouseEnter={rerollSaveColor}
               onFocus={rerollSaveColor}
               disabled={saveState === "saving"}
@@ -388,8 +403,14 @@ export function Workspace({
               {saveState === "saved" && "Saved!"}
               {saveState === "error" && "Couldn't save"}
               {saveState === "not-logged-in" && "Log in to save"}
+              {saveState === "no-credits" && "Out of credits"}
               {saveState === "idle" && "Save palette"}
             </button>
+            {saveState === "no-credits" && (
+              <p className="mt-2 w-full text-center font-display text-[12px]" style={{ color: "#6B6863" }}>
+                Click again to buy more credits.
+              </p>
+            )}
           </div>
         </div>
       </div>

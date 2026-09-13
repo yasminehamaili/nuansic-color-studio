@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
 import { useRequireAuth } from "@/lib/useRequireAuth";
+import { PageShell } from "./PageShell";
 
 type SavedColor = { hex: string; label: string };
 type SavedPalette = {
@@ -49,16 +50,19 @@ export function SavedPalettesPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAFA]">
-        <p className="font-display text-[14px]" style={{ color: "#6B6863" }}>
-          Loading...
-        </p>
-      </div>
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center bg-[#FAFAFA]">
+          <p className="font-display text-[14px]" style={{ color: "#6B6863" }}>
+            Loading...
+          </p>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#FAFAFA] px-6 py-16">
+    <PageShell>
+    <div className="w-full bg-[#FAFAFA] px-6 py-16">
       <div className="mx-auto max-w-[700px]">
         <p className="font-display text-[24px] font-bold" style={{ color: "#0B0B0B" }}>
           Saved Palettes
@@ -118,5 +122,6 @@ export function SavedPalettesPage() {
         )}
       </div>
     </div>
+    </PageShell>
   );
 }

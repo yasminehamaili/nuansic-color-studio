@@ -16,6 +16,15 @@ dist-ssr
 .nitro
 *.local
 
+# Python
+__pycache__/
+*.pyc
+
+# Environment variables / secrets -- never commit these
+.env
+.env.*
+!.env.example
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

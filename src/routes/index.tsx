@@ -7,7 +7,7 @@ import { Creatives } from "@/components/nuansic/Creatives";
 import { Footer } from "@/components/nuansic/Footer";
 import PaletteGenerator from "../components/PaletteGenerator";
 import { ColorOfTheDay } from "@/components/nuansic/ColorOfTheDay";
-
+//uvicorn palette_api:app --reloa  
 // inside your route's component:
 
 export const Route = createFileRoute("/")({

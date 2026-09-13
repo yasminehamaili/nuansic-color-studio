@@ -30,6 +30,7 @@ Run locally:
 import colorsys
 import hashlib
 import io
+import os
 from datetime import date
 
 import numpy as np
@@ -45,13 +46,86 @@ from fashion_theory import generate_fashion_palette
 
 CATEGORIES = ["uiux", "graphic_design", "home_interior", "fashion"]
 
+# Comma-separated list of allowed origins, e.g.
+#   ALLOWED_ORIGINS=https://nuansic.com,https://www.nuansic.com
+# Defaults to common local dev ports so nothing breaks locally, but this
+# MUST be set to the real deployed frontend domain(s) in production --
+# "*" (allow everything) means any website on the internet can call this
+# API from a visitor's browser, not just yours.
+_allowed = os.environ.get("ALLOWED_ORIGINS", "")
+ALLOWED_ORIGINS = [o.strip() for o in _allowed.split(",") if o.strip()] or [
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+
 app = FastAPI(title="Palette AI")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this to your actual website domain before going live
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    # Baseline hardening headers -- cheap to add, and cover the "add
+    # security headers" / "force HTTPS" items from a standard pre-launch
+    # checklist. HSTS only makes sense once you're actually served over
+    # HTTPS (which Railway/Render/Fly.io give you by default) -- it tells
+    # browsers to never fall back to plain HTTP for this host again.
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Minimal in-process rate limiting.
+# ---------------------------------------------------------------------------
+# This is a real but modest defense: it stops one client from hammering
+# /extract-colors (the CPU-heavy K-Means endpoint) or /generate-palette in a
+# tight loop, without adding an external dependency (Redis, slowapi, etc).
+# It is NOT a substitute for edge/CDN-level protection (Cloudflare and most
+# hosts offer this) if the app gets real abuse traffic or DDoS attempts --
+# that operates before requests even reach this process, and also isn't
+# reset by a server restart the way this in-memory counter is. Consider it
+# a floor, not a ceiling.
+import time
+from collections import defaultdict
+
+_RATE_LIMIT = 30          # requests
+_RATE_WINDOW_SECONDS = 60
+_request_log: dict[str, list[float]] = defaultdict(list)
+
+
+@app.middleware("http")
+async def rate_limit(request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    window_start = now - _RATE_WINDOW_SECONDS
+
+    log = _request_log[client_ip]
+    while log and log[0] < window_start:
+        log.pop(0)
+
+    if len(log) >= _RATE_LIMIT:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            {"detail": "Too many requests, slow down."},
+            status_code=429,
+        )
+
+    log.append(now)
+    return await call_next(request)
+
+# Hard cap on uploaded image size (bytes) -- without this, nothing stops
+# someone from posting a huge file to /extract-colors over and over and
+# tying up server memory/CPU. 10 MB is generous for a photo used for color
+# sampling.
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
 # ---------------------------------------------------------------------------
@@ -244,7 +318,13 @@ def color_of_the_day():
 
 @app.post("/extract-colors")
 async def extract_colors(image: UploadFile = File(...)):
+    if image.content_type not in ("image/jpeg", "image/png", "image/webp"):
+        raise HTTPException(400, "Only JPEG, PNG, or WEBP images are accepted")
+
     image_bytes = await image.read()
+    if len(image_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "Image too large (10MB max)")
+
     try:
         candidates = extract_candidate_colors(image_bytes, k=6)
     except Exception:

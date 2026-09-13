@@ -1,0 +1,27 @@
+-- =============================================================================
+-- Close the credit-bypass loophole on public.palettes.
+-- =============================================================================
+-- WHY THIS MATTERS (found during a security pass, not a hypothetical):
+--
+-- create_palette() already existed and correctly does the credit check +
+-- decrement + palette insert as one atomic, SECURITY DEFINER transaction.
+-- But the ORIGINAL schema ALSO left a "palettes_insert_own" RLS policy in
+-- place that let any authenticated user insert into public.palettes
+-- directly with `supabase.from("palettes").insert(...)` — completely
+-- bypassing create_palette(), and therefore bypassing ai_credits entirely.
+--
+-- The frontend has been fixed to call the RPC instead of inserting
+-- directly, but that alone is NOT a real fix: RLS policies are enforced by
+-- Postgres itself, so anyone opening devtools and calling
+-- `supabase.from("palettes").insert(...)` from the browser console — using
+-- nothing but the public anon key every visitor already has — could still
+-- get unlimited free palettes with the old policy in place. Dropping the
+-- policy is what actually closes that off, at the only layer that can't be
+-- worked around from the client.
+--
+-- Safe to drop: create_palette() is SECURITY DEFINER, so it inserts as the
+-- function owner and was never relying on this policy to do its own write.
+-- After this runs, the ONLY way a row can land in public.palettes is
+-- through create_palette() — which means through spending a credit.
+
+drop policy if exists "palettes_insert_own" on public.palettes;

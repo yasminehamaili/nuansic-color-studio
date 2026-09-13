@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabase-client";
 import { useRequireAuth } from "../../lib/useRequireAuth";
 import { useUserProfile } from "../../lib/useUserProfile";
 import { BillingSummary } from "./BillingSummary";
+import { PageShell } from "./PageShell";
 
 type Tab = "account" | "notifications" | "billing";
 
@@ -100,10 +101,15 @@ export function SettingsPage() {
   }
 
   if (authLoading || loading || !profile) {
-    return <div className="p-10 text-center text-neutral-500">Loading settings…</div>;
+    return (
+      <PageShell>
+        <div className="p-10 text-center text-neutral-500">Loading settings…</div>
+      </PageShell>
+    );
   }
 
   return (
+    <PageShell>
     <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="text-2xl font-semibold mb-6">Settings</h1>
 
@@ -235,6 +241,7 @@ export function SettingsPage() {
 
       {tab === "billing" && <BillingSummary profile={profile} />}
     </div>
+    </PageShell>
   );
 }
 

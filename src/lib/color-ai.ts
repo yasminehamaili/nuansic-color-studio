@@ -5,7 +5,12 @@
  * unrelated client-side UI logic and is unchanged.
  */
 
-const API_URL = "http://localhost:8000";
+// Falls back to localhost for local dev only. In production this MUST be
+// set to wherever the FastAPI backend (backend/palette_api.py) is actually
+// deployed — Railway/Render/Fly.io, per the project's own deploy notes.
+// Without this env var set, palette generation silently fails for every
+// real visitor, since their browser has no server listening on localhost.
+const API_URL = import.meta.env['VITE_PALETTE_API_URL'] || "http://localhost:8000";
 
 /**
  * A large, hue-diverse "pretty color" pool (100 colors).
