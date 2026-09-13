@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 // deployed — Railway/Render/Fly.io, per the project's own deploy notes.
 // Without this env var set, palette generation silently fails for every
 // real visitor, since their browser has no server listening on localhost.
-const API_URL = import.meta.env["VITE_PALETTE_API_URL"] || "http://localhost:8000";
+const API_URL = import.meta.env['VITE_PALETTE_API_URL'] || "http://localhost:8000";
 
 const LABELS: Record<string, string> = {
   uiux: "UI/UX",
@@ -34,7 +34,13 @@ export function ColorOfTheDay() {
       .then((json) => {
         if (!cancelled) setData(json);
       })
-      .catch(() => {
+      .catch((err) => {
+        // Was previously a silent no-op -- this widget would just vanish
+        // with zero trace of why. Logging it doesn't change the graceful
+        // degrade (still hides itself rather than showing a broken card),
+        // but now the actual cause shows up in the browser console instead
+        // of being a mystery.
+        console.error("Color of the Day: failed to fetch from", API_URL, err);
         if (!cancelled) setData(null);
       })
       .finally(() => {

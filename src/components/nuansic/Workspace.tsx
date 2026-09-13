@@ -49,6 +49,7 @@ export function Workspace({
   const [saveColor, setSaveColor] = useState("#E87323");
   const [output, setOutput] = useState<PaletteColor[] | null>(null);
   const [loadingPalette, setLoadingPalette] = useState(false);
+  const [genError, setGenError] = useState(false);
  
   // Hovering/focusing the Save button rerolls its color, same pool and
   // sticky behavior as the hero cards — it doesn't revert on mouse-leave.
@@ -127,7 +128,13 @@ export function Workspace({
     try {
       const colors = await extractDominantColors(file, 6);
       setExtracted(colors);
-    } catch {
+    } catch (err) {
+      // Was previously a silent no-op -- the color swatches would just
+      // never appear with no indication why. This is almost always either
+      // the backend being unreachable (wrong/missing VITE_PALETTE_API_URL)
+      // or a CORS rejection (ALLOWED_ORIGINS not matching this site's
+      // origin) -- both show up clearly in the browser console now.
+      console.error("Color extraction failed -- is the backend reachable?", err);
       setExtracted([]);
     }
   };
@@ -141,15 +148,18 @@ export function Workspace({
     }
     let cancelled = false;
     setLoadingPalette(true);
+    setGenError(false);
     generatePalette(picked, category, variation)
       .then((result) => {
         if (!cancelled) {
           setOutput(result.palette);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Palette generation failed -- is the backend reachable?", err);
         if (!cancelled) {
           setOutput(null);
+          setGenError(true);
         }
       })
       .finally(() => {
@@ -363,6 +373,10 @@ export function Workspace({
                   </span>
                 </button>
               ))
+            ) : genError ? (
+              <span className="px-4 text-center font-display text-[13px]" style={{ color: "#B3261E" }}>
+                Couldn't reach the palette generator. Check your connection and try again.
+              </span>
             ) : (
               Array.from({ length: 6 }, (_, i) => (
                 <div
