@@ -65,13 +65,6 @@ ALLOWED_ORIGINS = [o.strip() for o in _allowed.split(",") if o.strip()] or [
 ]
 
 app = FastAPI(title="Palette AI")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
-
 
 @app.middleware("http")
 async def security_headers(request, call_next):
@@ -126,6 +119,16 @@ async def rate_limit(request, call_next):
 
     log.append(now)
     return await call_next(request)
+
+# ---------------------------------------------------------------------------
+# CORS Middleware must be added LAST so it executes FIRST 
+# ---------------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 # Hard cap on uploaded image size (bytes) -- without this, nothing stops
 # someone from posting a huge file to /extract-colors over and over and
