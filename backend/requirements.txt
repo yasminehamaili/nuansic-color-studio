@@ -4,3 +4,4 @@ python-multipart
 scikit-learn
 numpy
 pillow
+supabase

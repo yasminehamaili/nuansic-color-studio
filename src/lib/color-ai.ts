@@ -4,6 +4,8 @@
  * Everything else here (tint ramp, hover reroll, brand palette) is
  * unrelated client-side UI logic and is unchanged.
  */
+import { supabase } from "./supabase-client";
+import { getDeviceId } from "./device-id";
 
 // Falls back to localhost for local dev only. In production this MUST be
 // set to wherever the FastAPI backend (backend/palette_api.py) is actually
@@ -162,12 +164,27 @@ export function generateTintRamp(hex: string, count = 6): string[] {
  * picked color plus however many companions that category's rules
  * produce (5 for graphic_design/home_interior/fashion, 6 for uiux). Each
  * color carries a real, rule-derived label — not a fabricated role.
+ *
+ * Also carries the caller's identity for the daily generation quota:
+ * the signed-in user's access token if there's a session, otherwise an
+ * anonymous device id. The backend is the real enforcement point -- these
+ * headers just tell it who's asking.
  */
 export type PaletteColor = { hex: string; label: string; note?: string };
+export type PaletteCredits = { remaining: number; max: number };
 export type PaletteResult = {
   palette: PaletteColor[];
   summary: Record<string, string>;
+  credits: PaletteCredits;
 };
+
+/** Thrown when the caller is out of generations for today (HTTP 429). */
+export class QuotaExceededError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "QuotaExceededError";
+  }
+}
 
 export async function generatePalette(
   pickedColor: string,
@@ -179,13 +196,32 @@ export async function generatePalette(
   form.append("category", CATEGORY_CODE[category]);
   form.append("variation", String(variation));
 
+  const headers: Record<string, string> = {};
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  } else {
+    headers["X-Device-Id"] = getDeviceId();
+  }
+
   const res = await fetch(`${API_URL}/generate-palette`, {
     method: "POST",
+    headers,
     body: form,
   });
+
+  if (res.status === 429) {
+    const data = await res.json().catch(() => null);
+    throw new QuotaExceededError(data?.detail ?? "Daily generation limit reached.");
+  }
   if (!res.ok) throw new Error("generate-palette failed");
+
   const data = await res.json();
-  return { palette: data.palette as PaletteColor[], summary: data.summary };
+  return {
+    palette: data.palette as PaletteColor[],
+    summary: data.summary,
+    credits: data.credits as PaletteCredits,
+  };
 }
 
 /**

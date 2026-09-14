@@ -13,7 +13,8 @@ Endpoints:
                                                         summary: {...},
                                                         palette: [
                                                           { hex, label, note? }, ...
-                                                        ] }
+                                                        ],
+                                                        credits: { remaining, max } }
 
 `summary` carries the domain-specific reasoning (archetype/scheme/season,
 warmth, rationale, etc.) for a "why this palette" tooltip. `palette`
@@ -21,6 +22,10 @@ always starts with the base color itself (label: "Base — your pick"),
 followed by however many rule-driven companions that category's rules
 produce (5 for graphic_design/home_interior/fashion, 6 for uiux since its
 CTA-contrast rule adds one more).
+
+`credits` reflects the daily generation quota (separate from the
+ai_credits pool spent on saving palettes) -- see generation_quota in
+Supabase and consume_generation_credit().
 
 Run locally:
     pip install -r requirements.txt
@@ -34,10 +39,11 @@ import os
 from datetime import date
 
 import numpy as np
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from sklearn.cluster import KMeans
+from supabase import create_client, Client
 
 from graphic_design_theory import generate_graphic_design_palette
 from home_interior_theory import generate_home_interior_palette
@@ -126,6 +132,85 @@ async def rate_limit(request, call_next):
 # tying up server memory/CPU. 10 MB is generous for a photo used for color
 # sampling.
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+
+# ---------------------------------------------------------------------------
+# Daily generation quota (Supabase-backed)
+# ---------------------------------------------------------------------------
+# Separate from ai_credits (spent on SAVING a palette, see create_palette()
+# in the frontend). This gates GENERATION itself: 3/day for anonymous
+# visitors, 10/day for signed-in users, resetting once per calendar day.
+#
+# Uses the service-role key -- never expose this to the browser. It's the
+# same trust level as any other admin-only backend credential.
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+_supabase_admin: Client | None = None
+if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    _supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+ANON_DEVICE_MAX_CREDITS = 3
+USER_MAX_CREDITS = 10
+# Generous ceiling on total generations per IP per day, regardless of how
+# many device ids show up behind it -- a backstop against someone
+# scripting "clear storage, generate, repeat," not a per-person limit.
+ANON_IP_MAX_CREDITS = 30
+
+
+def _client_ip(request: Request) -> str:
+    # Most hosts (Railway/Render/Fly.io) sit behind a proxy that sets this;
+    # fall back to the direct connection if it's absent.
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _consume(owner_type: str, owner_key: str, max_credits: int) -> tuple[bool, int]:
+    if _supabase_admin is None:
+        # Quota system not configured (e.g. local dev without Supabase
+        # env vars) -- fail open rather than breaking generation entirely.
+        return True, max_credits
+    result = _supabase_admin.rpc(
+        "consume_generation_credit",
+        {"p_owner_type": owner_type, "p_owner_key": owner_key, "p_max_credits": max_credits},
+    ).execute()
+    row = result.data[0]
+    return row["allowed"], row["credits_remaining"]
+
+
+async def check_generation_quota(request: Request, authorization: str | None, x_device_id: str | None) -> dict:
+    """Raises HTTPException(429) if the caller is out of credits for today.
+    Returns {"remaining": int, "max": int} for the identity that was
+    actually checked, so the response can show a live badge."""
+
+    user_id = None
+    if authorization and authorization.lower().startswith("bearer ") and _supabase_admin is not None:
+        token = authorization.split(" ", 1)[1]
+        try:
+            user_id = _supabase_admin.auth.get_user(token).user.id
+        except Exception:
+            user_id = None  # invalid/expired token -- treat as anonymous
+
+    if user_id:
+        allowed, remaining = _consume("user", user_id, USER_MAX_CREDITS)
+        if not allowed:
+            raise HTTPException(429, "Daily generation limit reached. More credits in 24h.")
+        return {"remaining": remaining, "max": USER_MAX_CREDITS}
+
+    # Anonymous: IP backstop first (cheap reject for scripted abuse),
+    # then the per-device quota that actually drives the UI badge.
+    ip = _client_ip(request)
+    ip_allowed, _ = _consume("ip", ip, ANON_IP_MAX_CREDITS)
+    if not ip_allowed:
+        raise HTTPException(429, "Too many generations from this network today.")
+
+    device_key = x_device_id or ip  # no device id header -> fall back to IP-keyed quota
+    allowed, remaining = _consume("device", device_key, ANON_DEVICE_MAX_CREDITS)
+    if not allowed:
+        raise HTTPException(429, "Daily generation limit reached. Sign in for more credits, or wait 24h.")
+    return {"remaining": remaining, "max": ANON_DEVICE_MAX_CREDITS}
 
 
 # ---------------------------------------------------------------------------
@@ -336,12 +421,20 @@ async def extract_colors(image: UploadFile = File(...)):
 
 @app.post("/generate-palette")
 async def generate_palette(
+    request: Request,
     category: str = Form(...),
     base_color: str = Form(...),
     variation: int = Form(0),
+    authorization: str | None = Header(default=None),
+    x_device_id: str | None = Header(default=None, alias="X-Device-Id"),
 ):
     if category not in CATEGORIES:
         raise HTTPException(400, f"category must be one of {CATEGORIES}")
+
+    # Real enforcement lives here -- this is the actual gate, not the
+    # frontend button state, so it can't be skipped by calling this
+    # endpoint directly.
+    credits = await check_generation_quota(request, authorization, x_device_id)
 
     try:
         base_rgb = hex_to_rgb(base_color)
@@ -351,4 +444,6 @@ async def generate_palette(
     h, l, s = rgb_to_hls(base_rgb)
     base_hex = hls_to_hex(h, l, s)
 
-    return build_response(base_hex, category, h, l, s, variation)
+    response = build_response(base_hex, category, h, l, s, variation)
+    response["credits"] = credits
+    return response

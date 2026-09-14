@@ -7,8 +7,10 @@ import {
   nextHoverColor,
   readableTextOn,
   rgbToHex,
+  QuotaExceededError,
   type Category,
   type PaletteColor,
+  type PaletteCredits,
 } from "@/lib/color-ai";
 import { supabase } from "@/lib/supabase-client";
 import { SelectImageModal } from "./SelectImageModal";
@@ -50,6 +52,24 @@ export function Workspace({
   const [output, setOutput] = useState<PaletteColor[] | null>(null);
   const [loadingPalette, setLoadingPalette] = useState(false);
   const [genError, setGenError] = useState(false);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [credits, setCredits] = useState<PaletteCredits | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  // Tracks whether there's a session so the "3 credits" / "10 credits"
+  // badge can flip immediately on login/logout, even before the next
+  // generation call comes back with a real count from the server.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setIsSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+      setCredits(null); // stale count from the other identity -- drop it
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const creditsMax = isSignedIn ? 10 : 3;
+  const creditsRemaining = credits?.remaining ?? creditsMax;
  
   // Hovering/focusing the Save button rerolls its color, same pool and
   // sticky behavior as the hero cards — it doesn't revert on mouse-leave.
@@ -149,17 +169,23 @@ export function Workspace({
     let cancelled = false;
     setLoadingPalette(true);
     setGenError(false);
+    setQuotaError(null);
     generatePalette(picked, category, variation)
       .then((result) => {
         if (!cancelled) {
           setOutput(result.palette);
+          setCredits(result.credits);
         }
       })
       .catch((err) => {
-        console.error("Palette generation failed -- is the backend reachable?", err);
         if (!cancelled) {
           setOutput(null);
-          setGenError(true);
+          if (err instanceof QuotaExceededError) {
+            setQuotaError(err.message);
+          } else {
+            console.error("Palette generation failed -- is the backend reachable?", err);
+            setGenError(true);
+          }
         }
       })
       .finally(() => {
@@ -373,6 +399,10 @@ export function Workspace({
                   </span>
                 </button>
               ))
+            ) : quotaError ? (
+              <span className="px-4 text-center font-display text-[13px]" style={{ color: "#B3261E" }}>
+                {quotaError}
+              </span>
             ) : genError ? (
               <span className="px-4 text-center font-display text-[13px]" style={{ color: "#B3261E" }}>
                 Couldn't reach the palette generator. Check your connection and try again.
@@ -388,11 +418,16 @@ export function Workspace({
             )}
           </div>
 
-          <div className="mt-5 flex justify-center gap-3">
+          <p className="mt-3 text-center font-display text-[12px]" style={{ color: "#6B6863" }}>
+            {creditsRemaining} / {creditsMax} credits today
+            {!isSignedIn && creditsRemaining <= 0 && " — log in for more"}
+          </p>
+
+          <div className="mt-2 flex justify-center gap-3">
             <button
               type="button"
               onClick={() => setVariation((v) => v + 1)}
-              disabled={!picked || !category || loadingPalette}
+              disabled={!picked || !category || loadingPalette || creditsRemaining <= 0}
               className="h-[44px] rounded-[10px] px-5 font-display text-[15px] font-semibold transition-transform duration-150 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
               style={{ backgroundColor: "#0B0B0B", color: "#F5F5F5" }}
             >
