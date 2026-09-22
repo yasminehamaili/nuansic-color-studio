@@ -15,11 +15,11 @@ import {
 import { supabase } from "@/lib/supabase-client";
 import { SelectImageModal } from "./SelectImageModal";
  
-const CATEGORIES: { label: Category; w: string }[] = [
-  { label: "Graphic Design", w: "220px" },
-  { label: "UI/UX", w: "92px" },
-  { label: "fashion", w: "112px" },
-  { label: "Interior home design", w: "244px" },
+const CATEGORIES: { label: Category }[] = [
+  { label: "Graphic Design" },
+  { label: "UI/UX" },
+  { label: "fashion" },
+  { label: "Interior home design" },
 ];
  
 export type WorkspaceHandle = { openPicker: () => void };
@@ -297,7 +297,7 @@ export function Workspace({
           <p className="mt-5 font-display text-[14px] text-foreground md:text-[16px]">
             click anywhere on the image, or pick a swatch below
           </p>
-          <div className="mt-3 grid grid-cols-3 gap-[10px] sm:grid-cols-6 sm:gap-[14px]">
+          <div className="mt-3 grid grid-cols-6 gap-2 sm:gap-[14px]">
             {Array.from({ length: 6 }, (_, i) => extracted[i]).map((hex, i) => (
               <button
                 key={i}
@@ -305,7 +305,7 @@ export function Workspace({
                 disabled={!hex}
                 onClick={() => hex && pickColor(hex)}
                 aria-label={hex ? `pick ${hex}` : "no extracted color yet"}
-                className="aspect-square rounded-[10px] transition-transform duration-200 hover:scale-105 active:scale-95 lg:h-[84px] lg:aspect-auto"
+                className="aspect-square rounded-[8px] transition-transform duration-200 hover:scale-105 active:scale-95 sm:rounded-[10px] lg:h-[84px] lg:aspect-auto"
                 style={{
                   backgroundColor: hex ?? "#D9D9D9",
                   outline:
@@ -350,7 +350,7 @@ export function Workspace({
           <p className="mt-7 font-display text-[20px] font-bold text-foreground">
             What are you designing?
           </p>
-          <div className="mt-3 flex flex-wrap gap-3">
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:gap-3 sm:overflow-visible sm:pb-0">
             {CATEGORIES.map((c) => {
               const active = category === c.label;
               return (
@@ -358,10 +358,8 @@ export function Workspace({
                   key={c.label}
                   type="button"
                   onClick={() => setCategory(active ? null : c.label)}
-                  className="h-[44px] rounded-[10px] px-4 font-display text-[15px] transition-all duration-200 hover:scale-105 active:scale-95 md:text-[17px]"
+                  className="h-[38px] shrink-0 whitespace-nowrap rounded-[10px] px-3 font-display text-[13px] transition-all duration-200 hover:scale-105 active:scale-95 sm:h-[44px] sm:px-4 sm:text-[15px] md:text-[17px]"
                   style={{
-                    width: c.w,
-                    maxWidth: "100%",
                     backgroundColor: active ? "#E87323" : "#0B0B0B",
                     color: "#F5F5F5",
                   }}
@@ -376,7 +374,7 @@ export function Workspace({
             Generated color palette
           </p>
           <div
-            className="mt-3 flex h-[200px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-4 sm:h-[260px] lg:h-[320px]">
+            className="mt-3 flex h-[130px] w-full max-w-[460px] items-center justify-center gap-2 rounded-[10px] p-3 sm:h-[180px] sm:p-4 lg:h-[320px]">
             {loadingPalette ? (
               <span className="font-display text-[14px]" style={{ color: "#6B6863" }}>
                 generating...

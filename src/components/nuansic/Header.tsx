@@ -49,7 +49,7 @@ export function Header() {
             alt="Nuansic Logo"
             width={50}
             height={50}
-            className="mt-4"
+            className="mt-4 h-9 w-9 md:h-11 md:w-11"
           />
         </a>
 

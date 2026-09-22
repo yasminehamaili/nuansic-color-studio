@@ -62,10 +62,10 @@ export function Creatives() {
         <div className="lg:hidden">
           <div
             className="relative mx-auto w-full max-w-150 px-6 py-8 text-center"
-            style={{ backgroundColor: "#A2E07D", borderRadius: "170px 170px 0 0" }}
+            style={{ backgroundColor: "#AADCE3", borderRadius: "170px 170px 0 0" }}
           >
-            <span className="font-display text-[24px] font-extrabold text-foreground">logo</span>
-            <p className="mt-4 font-display text-[16px] leading-snug" style={{ color: "#1E997D" }}>
+            <img src="/nuansic-logo2.png" alt="Nuansic Logo" width={140} height={40} className="mx-auto" />
+            <p className="mt-4 font-display text-[16px] leading-snug" style={{ color: "#1D5ED6" }}>
               A color playground for creative minds.
             </p>
           </div>
@@ -87,13 +87,13 @@ export function Creatives() {
             ))}
           </div>
 
-          <div className="relative mt-8">
+          <div className="relative mx-auto mt-8 w-full max-w-[380px]">
             <div
-              className="absolute inset-x-0 top-0 mx-auto h-[120px] w-full max-w-[380px]"
+              className="absolute inset-0"
               style={{ backgroundColor: "#7C37FA", borderRadius: "65px 65px 0 0" }}
             />
             <h2
-              className="relative px-7 pt-7 font-display text-[26px] font-bold leading-tight"
+              className="relative px-7 pb-8 pt-7 font-display text-[26px] font-bold leading-tight"
               style={{ color: "#FAD1E1" }}
             >
               built for every creative

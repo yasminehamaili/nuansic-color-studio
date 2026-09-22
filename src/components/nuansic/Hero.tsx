@@ -41,7 +41,7 @@ export function Hero({ onUploadClick }: { onUploadClick: () => void }) {
   return (
     <section
       id="top"
-      className="relative flex w-full flex-col justify-center overflow-hidden pb-12 lg:min-h-[calc(100svh-64px)]"
+      className="relative flex w-full flex-col justify-center overflow-hidden pb-12 pt-8 lg:pt-0 lg:min-h-[calc(100svh-64px)]"
     >
       <div className="relative mx-auto w-full max-w-[1100px] px-6">
         {/* Headline */}
