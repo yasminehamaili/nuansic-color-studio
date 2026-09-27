@@ -55,6 +55,10 @@ export function Workspace({
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [credits, setCredits] = useState<PaletteCredits | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  // True once a color + category are picked while signed out -- generation
+  // itself never fires in that state, this just drives the "log in to
+  // generate" prompt in place of the palette grid.
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   // Tracks whether there's a session so the "3 credits" / "10 credits"
   // badge can flip immediately on login/logout, even before the next
@@ -164,8 +168,18 @@ export function Workspace({
   useEffect(() => {
     if (!picked || !category) {
       setOutput(null);
+      setNeedsLogin(false);
       return;
     }
+    if (!isSignedIn) {
+      // Picking a color + category is still allowed while signed out (so
+      // the UI stays browsable), but generation -- the part that calls the
+      // backend and costs a credit -- only ever fires for a real user.
+      setOutput(null);
+      setNeedsLogin(true);
+      return;
+    }
+    setNeedsLogin(false);
     let cancelled = false;
     setLoadingPalette(true);
     setGenError(false);
@@ -194,7 +208,7 @@ export function Workspace({
     return () => {
       cancelled = true;
     };
-  }, [picked, category, variation]);
+  }, [picked, category, variation, isSignedIn]);
  
   const ramp = picked ? generateTintRamp(picked, count) : [];
  
@@ -397,6 +411,15 @@ export function Workspace({
                   </span>
                 </button>
               ))
+            ) : needsLogin ? (
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/login" })}
+                className="px-4 text-center font-display text-[13px] underline underline-offset-2"
+                style={{ color: "#6B6863" }}
+              >
+                Log in to generate a palette
+              </button>
             ) : quotaError ? (
               <span className="px-4 text-center font-display text-[13px]" style={{ color: "#B3261E" }}>
                 {quotaError}
@@ -417,15 +440,20 @@ export function Workspace({
           </div>
 
           <p className="mt-3 text-center font-display text-[12px]" style={{ color: "#6B6863" }}>
-            {creditsRemaining} / {creditsMax} credits today
-            {!isSignedIn && creditsRemaining <= 0 && " — log in for more"}
+            {isSignedIn ? `${creditsRemaining} / ${creditsMax} credits today` : "Log in to generate palettes"}
           </p>
 
           <div className="mt-2 flex flex-wrap justify-center gap-3">
             <button
               type="button"
-              onClick={() => setVariation((v) => v + 1)}
-              disabled={!picked || !category || loadingPalette || creditsRemaining <= 0}
+              onClick={() => {
+                if (!isSignedIn) {
+                  navigate({ to: "/login" });
+                  return;
+                }
+                setVariation((v) => v + 1);
+              }}
+              disabled={!picked || !category || loadingPalette || (isSignedIn && creditsRemaining <= 0)}
               className="h-[44px] rounded-[10px] px-5 font-display text-[15px] font-semibold transition-transform duration-150 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
               style={{ backgroundColor: "#0B0B0B", color: "#F5F5F5" }}
             >
@@ -434,6 +462,10 @@ export function Workspace({
             <button
               type="button"
               onClick={() => {
+                if (!isSignedIn) {
+                  navigate({ to: "/login" });
+                  return;
+                }
                 if (saveState === "no-credits") {
                   navigate({ to: "/upgrade" });
                   return;

@@ -148,8 +148,6 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 #
 # Uses the service-role key -- never expose this to the browser. It's the
 # same trust level as any other admin-only backend credential.
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-GROQ_MODEL = "llama-3.3-70b-versatile"
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -157,12 +155,10 @@ _supabase_admin: Client | None = None
 if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
     _supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-ANON_DEVICE_MAX_CREDITS = 3
 USER_MAX_CREDITS = 10
-# Generous ceiling on total generations per IP per day, regardless of how
-# many device ids show up behind it -- a backstop against someone
-# scripting "clear storage, generate, repeat," not a per-person limit.
-ANON_IP_MAX_CREDITS = 30
+# There is no anonymous quota -- generation is gated to signed-in users
+# only (see check_generation_quota below), so nothing is tracked or spent
+# until a real user id exists.
 
 # ---------------------------------------------------------------------------
 # Groq (Color of the Day copy)
@@ -172,15 +168,6 @@ ANON_IP_MAX_CREDITS = 30
 # is only used for wording, never for deciding what's true about the color.
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = "llama-3.3-70b-versatile"
-
-
-def _client_ip(request: Request) -> str:
-    # Most hosts (Railway/Render/Fly.io) sit behind a proxy that sets this;
-    # fall back to the direct connection if it's absent.
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
 
 
 def _consume(owner_type: str, owner_key: str, max_credits: int) -> tuple[bool, int]:
@@ -196,37 +183,25 @@ def _consume(owner_type: str, owner_key: str, max_credits: int) -> tuple[bool, i
     return row["allowed"], row["credits_remaining"]
 
 
-async def check_generation_quota(request: Request, authorization: str | None, x_device_id: str | None) -> dict:
-    """Raises HTTPException(429) if the caller is out of credits for today.
-    Returns {"remaining": int, "max": int} for the identity that was
-    actually checked, so the response can show a live badge."""
+async def check_generation_quota(authorization: str | None) -> dict:
+    """Raises HTTPException(401) if the caller isn't signed in with a valid
+    session, and HTTPException(429) if they're out of credits for today.
+    Generation is gated to signed-in users only -- there is no anonymous
+    fallback, so nothing is tracked or spent until a real user id exists."""
 
-    user_id = None
-    if authorization and authorization.lower().startswith("bearer ") and _supabase_admin is not None:
-        token = authorization.split(" ", 1)[1]
-        try:
-            user_id = _supabase_admin.auth.get_user(token).user.id
-        except Exception:
-            user_id = None  # invalid/expired token -- treat as anonymous
+    if not (authorization and authorization.lower().startswith("bearer ") and _supabase_admin is not None):
+        raise HTTPException(401, "Sign in to generate palettes.")
 
-    if user_id:
-        allowed, remaining = _consume("user", user_id, USER_MAX_CREDITS)
-        if not allowed:
-            raise HTTPException(429, "Daily generation limit reached. More credits in 24h.")
-        return {"remaining": remaining, "max": USER_MAX_CREDITS}
+    token = authorization.split(" ", 1)[1]
+    try:
+        user_id = _supabase_admin.auth.get_user(token).user.id
+    except Exception:
+        raise HTTPException(401, "Sign in to generate palettes.")
 
-    # Anonymous: IP backstop first (cheap reject for scripted abuse),
-    # then the per-device quota that actually drives the UI badge.
-    ip = _client_ip(request)
-    ip_allowed, _ = _consume("ip", ip, ANON_IP_MAX_CREDITS)
-    if not ip_allowed:
-        raise HTTPException(429, "Too many generations from this network today.")
-
-    device_key = x_device_id or ip  # no device id header -> fall back to IP-keyed quota
-    allowed, remaining = _consume("device", device_key, ANON_DEVICE_MAX_CREDITS)
+    allowed, remaining = _consume("user", user_id, USER_MAX_CREDITS)
     if not allowed:
-        raise HTTPException(429, "Daily generation limit reached. Sign in for more credits, or wait 24h.")
-    return {"remaining": remaining, "max": ANON_DEVICE_MAX_CREDITS}
+        raise HTTPException(429, "Daily generation limit reached. More credits in 24h.")
+    return {"remaining": remaining, "max": USER_MAX_CREDITS}
 
 
 # ---------------------------------------------------------------------------
@@ -490,20 +465,18 @@ async def extract_colors(image: UploadFile = File(...)):
 
 @app.post("/generate-palette")
 async def generate_palette(
-    request: Request,
     category: str = Form(...),
     base_color: str = Form(...),
     variation: int = Form(0),
     authorization: str | None = Header(default=None),
-    x_device_id: str | None = Header(default=None, alias="X-Device-Id"),
 ):
     if category not in CATEGORIES:
         raise HTTPException(400, f"category must be one of {CATEGORIES}")
 
     # Real enforcement lives here -- this is the actual gate, not the
     # frontend button state, so it can't be skipped by calling this
-    # endpoint directly.
-    credits = await check_generation_quota(request, authorization, x_device_id)
+    # endpoint directly. Signed-out callers get a 401, not a smaller quota.
+    credits = await check_generation_quota(authorization)
 
     try:
         base_rgb = hex_to_rgb(base_color)
