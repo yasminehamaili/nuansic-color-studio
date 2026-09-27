@@ -35,10 +35,12 @@ Run locally:
 import colorsys
 import hashlib
 import io
+import json
 import os
 from datetime import date
 
 import numpy as np
+import requests
 from fastapi import FastAPI, UploadFile, File, Form, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
@@ -60,13 +62,8 @@ CATEGORIES = ["uiux", "graphic_design", "home_interior", "fashion"]
 # API from a visitor's browser, not just yours.
 _allowed = os.environ.get("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed.split(",") if o.strip()] or [
-    # 8080 is where `npm run dev` actually serves: @lovable.dev/vite-tanstack-config
-    # pins the Vite dev server to port 8080 (see vite.config.ts).
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
     "http://localhost:3000",
     "http://localhost:5173",
-    "http://nuansic.me"
 ]
 
 app = FastAPI(title="Palette AI")
@@ -151,6 +148,8 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 #
 # Uses the service-role key -- never expose this to the browser. It's the
 # same trust level as any other admin-only backend credential.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_MODEL = "llama-3.3-70b-versatile"
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -164,6 +163,15 @@ USER_MAX_CREDITS = 10
 # many device ids show up behind it -- a backstop against someone
 # scripting "clear storage, generate, repeat," not a per-person limit.
 ANON_IP_MAX_CREDITS = 30
+
+# ---------------------------------------------------------------------------
+# Groq (Color of the Day copy)
+# ---------------------------------------------------------------------------
+# Phrases the daily color-theory facts as a headline + sentence. The facts
+# themselves still come from the rule-based *_theory modules below -- Groq
+# is only used for wording, never for deciding what's true about the color.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 def _client_ip(request: Request) -> str:
@@ -394,6 +402,47 @@ def _headline_for(category: str, h: float, l: float, s: float) -> dict:
     raise ValueError(category)
 
 
+_cotd_llm_cache: dict[str, dict] = {}  # date_str -> {category: {"headline", "detail"}}
+
+
+def _llm_headline_for(category: str, base_hex: str, facts: dict) -> dict | None:
+    """Ask Groq to re-phrase today's color-theory facts as a headline + one
+    sentence. Returns None on any failure so the caller falls back to the
+    rule-based text -- a slow/down Groq must never break this endpoint."""
+    if not GROQ_API_KEY:
+        return None
+
+    prompt = (
+        f"Color {base_hex} for the '{category}' design category. "
+        f"Facts (do not contradict these): {json.dumps(facts)}. "
+        "Write a short headline (2-5 words, title case, no punctuation) and "
+        "one sentence of detail (no em dashes, under 25 words) explaining "
+        "what this color is good for in this category. "
+        "Reply with ONLY JSON: {\"headline\": \"...\", \"detail\": \"...\"}"
+    )
+    try:
+        resp = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+            json={
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.8,
+                "max_tokens": 120,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=8,
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
+        parsed = json.loads(content)
+        if "headline" in parsed and "detail" in parsed:
+            return {"headline": parsed["headline"], "detail": parsed["detail"]}
+    except Exception:
+        pass
+    return None
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -405,7 +454,19 @@ def color_of_the_day():
     base_hex = _color_for_date(today)
     h, l, s = rgb_to_hls(hex_to_rgb(base_hex))
 
-    entries = {cat: _headline_for(cat, h, l, s) for cat in CATEGORIES}
+    if today in _cotd_llm_cache:
+        entries = _cotd_llm_cache[today]
+    else:
+        entries = {}
+        for cat in CATEGORIES:
+            rule_based = _headline_for(cat, h, l, s)
+            facts = {
+                "rule_based_headline": rule_based["headline"],
+                "rule_based_detail": rule_based["detail"],
+            }
+            entries[cat] = _llm_headline_for(cat, base_hex, facts) or rule_based
+        _cotd_llm_cache[today] = entries
+
     return {"date": today, "color": base_hex, "entries": entries}
 
 
