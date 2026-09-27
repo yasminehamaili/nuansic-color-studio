@@ -62,6 +62,7 @@ _allowed = os.environ.get("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed.split(",") if o.strip()] or [
     "http://localhost:3000",
     "http://localhost:5173",
+    "http://nuansic.me"
 ]
 
 app = FastAPI(title="Palette AI")
