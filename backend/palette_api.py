@@ -60,6 +60,10 @@ CATEGORIES = ["uiux", "graphic_design", "home_interior", "fashion"]
 # API from a visitor's browser, not just yours.
 _allowed = os.environ.get("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed.split(",") if o.strip()] or [
+    # 8080 is where `npm run dev` actually serves: @lovable.dev/vite-tanstack-config
+    # pins the Vite dev server to port 8080 (see vite.config.ts).
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
     "http://localhost:3000",
     "http://localhost:5173",
     "http://nuansic.me"

@@ -12,6 +12,7 @@ dist
 dist-ssr
 .output
 .vinxi
+.netlify
 .tanstack/**
 .nitro
 *.local
@@ -19,6 +20,8 @@ dist-ssr
 # Python
 __pycache__/
 *.pyc
+.venv/
+venv/
 
 # Environment variables / secrets -- never commit these
 .env
